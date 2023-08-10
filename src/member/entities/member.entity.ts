@@ -1,12 +1,12 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { Role } from '../enum/member.enum';
+import { Role } from '../enum/Role';
 
 @Entity()
 export class Member {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'enum', enum: Role, default: Role.USER })
+  @Column({ type: 'varchar', enum: Role, default: Role.USER })
   role: Role;
 
   @Column({ unique: true })
