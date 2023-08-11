@@ -14,13 +14,8 @@ import { JwtAuthGuard } from './jwt-auth.guard';
   imports: [
     MemberModule,
     JwtModule.registerAsync({
-      useFactory: (configService: ConfigService) => {
-        const test = configService.get<JwtModuleOptions>(
-          ConfigProperties.JwtModuleOptions,
-        );
-        console.log(test);
-        return test;
-      },
+      useFactory: (configService: ConfigService) =>
+        configService.get<JwtModuleOptions>(ConfigProperties.JwtModuleOptions),
       inject: [ConfigService],
     }),
   ],

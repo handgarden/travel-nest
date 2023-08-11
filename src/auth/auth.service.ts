@@ -60,11 +60,19 @@ export class AuthService {
   }
 
   private validateLoginInfo(account: string, password: string) {
-    if (!NUM_AND_ALPHABET_ONLY.test(account)) {
+    if (
+      !NUM_AND_ALPHABET_ONLY.test(account) ||
+      account.length < 4 ||
+      account.length > 20
+    ) {
       throw new BadRequestException();
     }
 
-    if (!PASSWORD_REGEX.test(password)) {
+    if (
+      !PASSWORD_REGEX.test(password) ||
+      password.length < 8 ||
+      password.length > 20
+    ) {
       throw new BadRequestException();
     }
   }

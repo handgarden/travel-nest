@@ -2,14 +2,31 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { Test } from '@nestjs/testing';
 import { DuplicateAccountException } from '../member/exception/DuplicateAccount.exception';
-import { InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { MemberService } from 'src/member/member.service';
 import { CreateMemberDto } from 'src/member/dto/create-member.dto';
 import { DuplicateNicknameException } from 'src/member/exception/DuplicateNickname.exception';
+import { JwtService } from '@nestjs/jwt';
+import { LoginDto } from './dto/login.dto';
+import { Member } from 'src/member/entities/member.entity';
+import { Role } from 'src/member/enum/Role';
+import * as bcrypt from 'bcrypt';
+import { JwtPayload } from './dto/jwt.dto';
+import * as jwt from 'jsonwebtoken';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let memberService: MemberService;
+  const memberService: Partial<MemberService> = {
+    save: jest.fn(),
+    findByAccount: jest.fn(),
+  };
+  const jwtService: Partial<JwtService> = {
+    sign: jest.fn(),
+  };
+  const jwtSecret = 'secret';
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -17,14 +34,15 @@ describe('AuthService', () => {
         AuthService,
         {
           provide: MemberService,
-          useValue: {
-            save: jest.fn(),
-          },
+          useValue: memberService,
+        },
+        {
+          provide: JwtService,
+          useValue: jwtService,
         },
       ],
     }).compile();
     service = moduleRef.get<AuthService>(AuthService);
-    memberService = moduleRef.get<MemberService>(MemberService);
   });
 
   it('should be defined', () => {
@@ -113,6 +131,106 @@ describe('AuthService', () => {
       await expect(async () => {
         await service.register(registerDto);
       }).rejects.toThrowError(new InternalServerErrorException());
+    });
+  });
+
+  describe('login', () => {
+    it('계정이 정해진 정규 표현식에 맞지 않으면 예외를 던진다.', async () => {
+      const loginDto: LoginDto = {
+        account: '123',
+        password: 'password1234!',
+      };
+
+      expect(async () => await service.login(loginDto)).rejects.toThrowError(
+        new BadRequestException(),
+      );
+    });
+
+    it('비밀번호가 정해진 정규 표현식에 맞지 않으면 예외를 던진다.', async () => {
+      const loginDto: LoginDto = {
+        account: 'testAccount',
+        password: '123',
+      };
+
+      expect(async () => await service.login(loginDto)).rejects.toThrowError(
+        new BadRequestException(),
+      );
+    });
+
+    it('로그인하려는 계정에 해당하는 회원이 없으면 에외를 던진다.', async () => {
+      jest
+        .spyOn(memberService, 'findByAccount')
+        .mockImplementation((account: string) => {
+          if (account !== 'correctAccount') {
+            throw new BadRequestException();
+          }
+
+          return Promise.resolve(new Member());
+        });
+      const loginDto: LoginDto = {
+        account: 'testAccount',
+        password: 'password1234!',
+      };
+
+      expect(async () => await service.login(loginDto)).rejects.toThrowError(
+        new BadRequestException(),
+      );
+    });
+
+    it('비밀번호가 검증되지 않으면 예외를 던진다.', async () => {
+      jest
+        .spyOn(memberService, 'findByAccount')
+        .mockImplementation((account: string) => {
+          const member = new Member();
+          member.account = account;
+          member.password = 'password1234!!!!';
+          return Promise.resolve(member);
+        });
+
+      const loginDto: LoginDto = {
+        account: 'testAccount',
+        password: 'password1234!',
+      };
+
+      expect(async () => await service.login(loginDto)).rejects.toThrowError(
+        new BadRequestException(),
+      );
+    });
+
+    it('검증을 통과하고 로그인에 성공하면 jwt 토큰을 반환한다.', async () => {
+      jest
+        .spyOn(memberService, 'findByAccount')
+        .mockImplementation(async (account: string) => {
+          const member = new Member();
+          member.id = 1;
+          member.account = account;
+          member.password = await bcrypt.hash('password1234!', 10);
+          member.nickname = 'nickname';
+          member.role = Role.USER;
+          return Promise.resolve(member);
+        });
+
+      jest
+        .spyOn(jwtService, 'sign')
+        .mockImplementation((payload: JwtPayload) => {
+          return jwt.sign(payload, jwtSecret);
+        });
+
+      const loginDto: LoginDto = {
+        account: 'testAccount',
+        password: 'password1234!',
+      };
+
+      const { accessToken } = await service.login(loginDto);
+
+      const payload = jwt.verify(
+        accessToken,
+        jwtSecret,
+      ) as unknown as JwtPayload;
+
+      expect(payload.sub).toEqual(1);
+      expect(payload.nickname).toEqual('nickname');
+      expect(payload.role).toEqual(Role.USER);
     });
   });
 });
