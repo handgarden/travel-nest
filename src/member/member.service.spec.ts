@@ -7,6 +7,7 @@ import { CreateMemberDto } from './dto/create-member.dto';
 import { DuplicateAccountException } from './exception/DuplicateAccount.exception';
 import { DuplicateNicknameException } from './exception/DuplicateNickname.exception';
 import { InternalServerErrorException } from '@nestjs/common';
+import { Role } from './enum/Role';
 
 describe('MemberService', () => {
   let service: MemberService;
@@ -20,6 +21,7 @@ describe('MemberService', () => {
           provide: getRepositoryToken(Member),
           useValue: {
             save: jest.fn(),
+            findOneBy: jest.fn(),
           },
         },
       ],
@@ -119,6 +121,39 @@ describe('MemberService', () => {
       await expect(async () => {
         await service.save(createMemberDto);
       }).rejects.toThrowError(new InternalServerErrorException());
+    });
+  });
+
+  describe('findByAccount', () => {
+    it('계정에 해당하는 회원이 존재하면 반환', async () => {
+      jest.spyOn(repository, 'findOneBy').mockImplementation(() => {
+        const member = new Member();
+        member.id = 1;
+        member.account = 'test';
+        member.password = 'password';
+        member.nickname = 'nickname';
+        member.role = Role.USER;
+        return Promise.resolve(member);
+      });
+
+      const member = await service.findByAccount('test');
+
+      expect(member).toEqual({
+        id: 1,
+        account: 'test',
+        password: 'password',
+        nickname: 'nickname',
+        role: Role.USER,
+      });
+    });
+
+    it('계정에 해당하는 회원이 없으면 null 반환', async () => {
+      jest.spyOn(repository, 'findOneBy').mockImplementation(() => {
+        return Promise.resolve(null);
+      });
+
+      const member = await service.findByAccount('test');
+      expect(member).toBeNull();
     });
   });
 });
