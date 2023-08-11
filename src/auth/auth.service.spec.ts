@@ -1,30 +1,30 @@
 import { AuthService } from './auth.service';
-import { QueryFailedError, Repository } from 'typeorm';
 import { RegisterDto } from './dto/register.dto';
-import { Member } from 'src/member/entities/member.entity';
 import { Test } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { DuplicateAccountException } from './exception/DuplicateAccount.exception';
-import { DuplicateNicknameException } from './exception/DuplicateNickname.exception';
+import { DuplicateAccountException } from '../member/exception/DuplicateAccount.exception';
 import { InternalServerErrorException } from '@nestjs/common';
+import { MemberService } from 'src/member/member.service';
+import { CreateMemberDto } from 'src/member/dto/create-member.dto';
+import { DuplicateNicknameException } from 'src/member/exception/DuplicateNickname.exception';
 
 describe('AuthService', () => {
   let service: AuthService;
-  const mockMemberRepository: Partial<Repository<Member>> = {
-    save: jest.fn(),
-  };
+  let memberService: MemberService;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         AuthService,
         {
-          provide: getRepositoryToken(Member),
-          useValue: mockMemberRepository,
+          provide: MemberService,
+          useValue: {
+            save: jest.fn(),
+          },
         },
       ],
     }).compile();
     service = moduleRef.get<AuthService>(AuthService);
+    memberService = moduleRef.get<MemberService>(MemberService);
   });
 
   it('should be defined', () => {
@@ -34,10 +34,8 @@ describe('AuthService', () => {
   describe('register', () => {
     it('가입에 성공하면 회원의 db id를 반환', async () => {
       const spy = jest
-        .spyOn(mockMemberRepository, 'save')
-        .mockImplementation((member: Member) =>
-          Promise.resolve({ ...member, id: 1 }),
-        );
+        .spyOn(memberService, 'save')
+        .mockImplementation(() => Promise.resolve(1));
 
       const registerDto = new RegisterDto();
       registerDto.account = 'test';
@@ -49,15 +47,16 @@ describe('AuthService', () => {
     });
 
     it('중복된 계정이 존재하면 예외 발생', async () => {
-      jest.spyOn(mockMemberRepository, 'save').mockImplementation(
+      jest.spyOn(memberService, 'save').mockImplementation(
         (() => {
           const set = new Set<string>();
-          return (member: Member) => {
-            if (set.has(member.account)) {
-              throw new QueryFailedError('', [], { message: 'UNIQUE account' });
+          let id = 0;
+          return (createMemberDto: CreateMemberDto) => {
+            if (set.has(createMemberDto.account)) {
+              throw new DuplicateAccountException();
             }
-            set.add(member.account);
-            return Promise.resolve({ ...member, id: 1 });
+            set.add(createMemberDto.account);
+            return Promise.resolve(++id);
           };
         })(),
       );
@@ -67,7 +66,7 @@ describe('AuthService', () => {
       registerDto.nickname = 'nickname';
       await service.register(registerDto);
       const registerDto2 = new RegisterDto();
-      registerDto2.account = 'test';
+      registerDto2.account = registerDto.account;
       registerDto2.password = 'password';
       registerDto2.nickname = 'nickname2';
       await expect(async () => {
@@ -76,17 +75,16 @@ describe('AuthService', () => {
     });
 
     it('중복된 닉네임이 존재하면 예외 발생', async () => {
-      jest.spyOn(mockMemberRepository, 'save').mockImplementation(
+      jest.spyOn(memberService, 'save').mockImplementation(
         (() => {
           const set = new Set<string>();
-          return (member: Member) => {
-            if (set.has(member.nickname)) {
-              throw new QueryFailedError('', [], {
-                message: 'UNIQUE nickname',
-              });
+          let id = 0;
+          return (createMemberDto: CreateMemberDto) => {
+            if (set.has(createMemberDto.nickname)) {
+              throw new DuplicateNicknameException();
             }
-            set.add(member.nickname);
-            return Promise.resolve({ ...member, id: 1 });
+            set.add(createMemberDto.nickname);
+            return Promise.resolve(++id);
           };
         })(),
       );
@@ -98,17 +96,15 @@ describe('AuthService', () => {
       const registerDto2 = new RegisterDto();
       registerDto2.account = 'test2';
       registerDto2.password = 'password';
-      registerDto2.nickname = 'nickname';
+      registerDto2.nickname = registerDto.nickname;
       await expect(async () => {
         await service.register(registerDto2);
       }).rejects.toThrowError(new DuplicateNicknameException());
     });
 
     it('나머지 예외는 InternalServerException', async () => {
-      jest.spyOn(mockMemberRepository, 'save').mockImplementation(() => {
-        throw new QueryFailedError('', [], {
-          message: 'error',
-        });
+      jest.spyOn(memberService, 'save').mockImplementation(() => {
+        throw new InternalServerErrorException();
       });
       const registerDto = new RegisterDto();
       registerDto.account = 'test';
