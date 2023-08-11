@@ -45,4 +45,8 @@ export class MemberService {
       account,
     });
   }
+
+  findById(id: number) {
+    return this.memberRepository.findOneBy({ id });
+  }
 }

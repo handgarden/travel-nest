@@ -1,4 +1,11 @@
+import { JwtModuleOptions } from '@nestjs/jwt';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+
+export enum ConfigProperties {
+  TypeOrmModuleOptions = 'TypeOrmModuleOptions',
+  JwtModuleOptions = 'JWTModuleOptions',
+}
+
 export default () => {
   const TypeOrmModuleOptions: TypeOrmModuleOptions = {
     type: (process.env.DATABASE_TYPE as 'mysql') || 'sqlite',
@@ -14,7 +21,16 @@ export default () => {
         ? true
         : false,
   };
+
+  const JwtModuleOptions: JwtModuleOptions = {
+    secret: process.env.JWT_SECRET || 'secret',
+    signOptions: {
+      expiresIn: process.env.JWT_EXPIRES_IN || '60s',
+    },
+  };
+
   return {
-    TypeOrmModuleOptions,
+    [ConfigProperties.TypeOrmModuleOptions]: TypeOrmModuleOptions,
+    [ConfigProperties.JwtModuleOptions]: JwtModuleOptions,
   };
 };

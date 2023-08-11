@@ -1,14 +1,19 @@
 import { MemberService } from './../member/member.service';
 import { RegisterDto } from './dto/register.dto';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { NUM_AND_ALPHABET_ONLY, PASSWORD_REGEX } from './lib/regex';
 import { LoginDto } from './dto/login.dto';
 import { CreateMemberDto } from 'src/member/dto/create-member.dto';
+import { JwtService } from '@nestjs/jwt';
+import { JwtPayload } from './dto/jwt.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private memberService: MemberService) {}
+  constructor(
+    private memberService: MemberService,
+    private jwtService: JwtService,
+  ) {}
 
   /**
    * 회원 가입
@@ -33,25 +38,34 @@ export class AuthService {
    */
   async login(loginDto: LoginDto) {
     this.validateLoginInfo(loginDto.account, loginDto.password);
-
     const member = await this.memberService.findByAccount(loginDto.account);
 
     if (!member) {
-      throw new NotFoundException();
+      throw new BadRequestException();
     }
 
-    if (await this.validatePassword(loginDto.password, member.password)) {
-      throw new NotFoundException();
+    if (!(await this.validatePassword(loginDto.password, member.password))) {
+      throw new BadRequestException();
     }
+
+    const payload: JwtPayload = {
+      sub: member.id,
+      nickname: member.nickname,
+      role: member.role,
+    };
+
+    return {
+      accessToken: this.jwtService.sign(payload),
+    };
   }
 
   private validateLoginInfo(account: string, password: string) {
     if (!NUM_AND_ALPHABET_ONLY.test(account)) {
-      throw new NotFoundException();
+      throw new BadRequestException();
     }
 
     if (!PASSWORD_REGEX.test(password)) {
-      throw new NotFoundException();
+      throw new BadRequestException();
     }
   }
 
