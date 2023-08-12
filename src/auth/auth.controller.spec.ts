@@ -1,4 +1,3 @@
-import { JwtPayload } from './../../dist/auth/dto/jwt.dto.d';
 import { LoginDto } from './dto/login.dto';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
@@ -6,6 +5,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { Role } from 'src/member/enum/Role';
 import * as jwt from 'jsonwebtoken';
+import { JwtPayload } from './dto/jwt.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
