@@ -2,16 +2,38 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MemberService } from './member.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Member } from './entities/member.entity';
-import { QueryFailedError, Repository } from 'typeorm';
+import {
+  FindOptionsWhere,
+  QueryFailedError,
+  Repository,
+  UpdateResult,
+} from 'typeorm';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { DuplicateAccountException } from './exception/DuplicateAccount.exception';
 import { DuplicateNicknameException } from './exception/DuplicateNickname.exception';
-import { InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Role } from './enum/Role';
+import * as bcrypt from 'bcrypt';
 
 describe('MemberService', () => {
   let service: MemberService;
   let repository: Repository<Member>;
+
+  const generateMember = async (
+    id: number,
+    account?: string,
+    password?: string,
+    nickname?: string,
+  ) => {
+    const member = new Member();
+    member.id = id;
+    member.account = account || 'account';
+    member.nickname = nickname || 'nickname';
+    member.role = Role.USER;
+    member.password = password || bcrypt.hashSync('password', 10);
+
+    return member;
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -20,8 +42,13 @@ describe('MemberService', () => {
         {
           provide: getRepositoryToken(Member),
           useValue: {
+            getDb: jest.fn().mockImplementation(() => {
+              const set = new Set<Member>();
+              return () => set;
+            }),
             save: jest.fn(),
             findOneBy: jest.fn(),
+            update: jest.fn(),
           },
         },
       ],
@@ -108,7 +135,7 @@ describe('MemberService', () => {
       }).rejects.toThrowError(new DuplicateNicknameException());
     });
 
-    it('나머지 예외는 InternalServerException', async () => {
+    it('나머지 예외는 그대로 전파', async () => {
       jest.spyOn(repository, 'save').mockImplementation(() => {
         throw new QueryFailedError('', [], {
           message: 'error',
@@ -120,7 +147,7 @@ describe('MemberService', () => {
       createMemberDto.nickname = 'nickname';
       await expect(async () => {
         await service.save(createMemberDto);
-      }).rejects.toThrowError(new InternalServerErrorException());
+      }).rejects.toThrowError(QueryFailedError);
     });
   });
 
@@ -154,6 +181,121 @@ describe('MemberService', () => {
 
       const member = await service.findByAccount('test');
       expect(member).toBeNull();
+    });
+  });
+
+  describe('getProfile', () => {
+    it('정상 요청시 회원 프로필 정보 반환', async () => {
+      jest
+        .spyOn(repository, 'findOneBy')
+        .mockImplementation(
+          async (option: Partial<FindOptionsWhere<Member>>) => {
+            const member = generateMember(option.id as number);
+
+            return Promise.resolve(member);
+          },
+        );
+      const profile = await service.getProfile(1);
+
+      expect(profile).toEqual({ nickname: 'nickname' });
+    });
+
+    it('없는 회원 요청시 NotFoundException', async () => {
+      jest
+        .spyOn(repository, 'findOneBy')
+        .mockImplementation(() => Promise.resolve(null));
+
+      expect(async () => await service.getProfile(1)).rejects.toThrowError(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('updateNickname', () => {
+    it('정상 처리 시 반환 없음', () => {
+      const spy = jest
+        .spyOn(repository, 'findOneBy')
+        .mockReturnValue(Promise.resolve(generateMember(1)));
+
+      jest
+        .spyOn(repository, 'update')
+        .mockReturnValue(Promise.resolve(new UpdateResult()));
+
+      service.updateNickname(1, 'nickname');
+      expect(spy).toBeCalled();
+    });
+
+    it('변경하려는 회원이 존재하지 않으면 NotFoundException', () => {
+      const spy = jest.spyOn(repository, 'findOneBy').mockReturnValue(null);
+
+      expect(
+        async () => await service.updateNickname(1, 'nickname'),
+      ).rejects.toThrowError(NotFoundException);
+      expect(spy).toBeCalled();
+    });
+
+    it('DB에서 닉네임 중복 예외 발생시 DuplicateNicknameException', () => {
+      jest
+        .spyOn(repository, 'findOneBy')
+        .mockReturnValue(Promise.resolve(generateMember(1)));
+
+      jest
+        .spyOn(repository, 'update')
+        .mockRejectedValue(
+          new QueryFailedError('', [], { message: 'UNIQUE nickname' }),
+        );
+
+      expect(
+        async () => await service.updateNickname(1, 'nickname'),
+      ).rejects.toThrowError(DuplicateNicknameException);
+    });
+  });
+
+  describe('updatePassword', () => {
+    it('정상 처리 시 반환 없음', () => {
+      const member = generateMember(1);
+      const spy = jest
+        .spyOn(repository, 'findOneBy')
+        .mockReturnValue(Promise.resolve(member));
+
+      jest.spyOn(repository, 'save').mockReturnValue(Promise.resolve(member));
+
+      jest
+        .spyOn(repository, 'update')
+        .mockReturnValue(Promise.resolve(new UpdateResult()));
+
+      service.updatePassword(1, {
+        prevPassword: 'password',
+        newPassword: 'newPassword',
+      });
+      expect(spy).toBeCalled();
+    });
+
+    it('변경하려는 회원이 존재하지 않으면 NotFoundException', () => {
+      const spy = jest.spyOn(repository, 'findOneBy').mockReturnValue(null);
+
+      expect(
+        async () =>
+          await service.updatePassword(1, {
+            prevPassword: 'password',
+            newPassword: 'newPassword',
+          }),
+      ).rejects.toThrowError(NotFoundException);
+      expect(spy).toBeCalled();
+    });
+
+    it('이전 비밀번호가 맞지 않으면 BadRequestException', () => {
+      jest
+        .spyOn(repository, 'findOneBy')
+        .mockReturnValue(Promise.resolve(generateMember(1)));
+
+      expect(
+        async () =>
+          await service.updatePassword(1, {
+            prevPassword: 'prevPassword',
+            newPassword: 'newPassword',
+          }),
+      ).rejects.toThrowError(BadRequestException);
     });
   });
 });
