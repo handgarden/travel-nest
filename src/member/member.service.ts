@@ -1,11 +1,18 @@
 import { CreateMemberDto } from './dto/create-member.dto';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Member } from './entities/member.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 import { Role } from './enum/Role';
 import { DuplicateAccountException } from './exception/DuplicateAccount.exception';
 import { DuplicateNicknameException } from './exception/DuplicateNickname.exception';
+import { MemberProfile } from './dto/member-profile.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class MemberService {
@@ -36,7 +43,7 @@ export class MemberService {
         }
       }
 
-      throw new InternalServerErrorException();
+      throw err;
     }
   }
 
@@ -46,7 +53,63 @@ export class MemberService {
     });
   }
 
-  findById(id: number) {
-    return this.memberRepository.findOneBy({ id });
+  async getProfile(id: number) {
+    const member = await this.memberRepository.findOneBy({ id });
+
+    if (!member) {
+      throw new NotFoundException();
+    }
+
+    const profile = new MemberProfile();
+
+    profile.nickname = member.nickname;
+    profile.createdAt = member.createdAt;
+    profile.updatedAt = member.updatedAt;
+
+    return profile;
+  }
+
+  async updateNickname(id: number, nickname: string) {
+    const member = await this.memberRepository.findOneBy({ id });
+
+    if (!member) {
+      throw new NotFoundException();
+    }
+
+    member.nickname = nickname;
+
+    try {
+      await this.memberRepository.update('nickname', member);
+    } catch (err) {
+      if (err instanceof QueryFailedError) {
+        const message = err.message;
+
+        if (message.includes('UNIQUE') && message.includes('nickname')) {
+          throw new DuplicateNicknameException();
+        }
+      }
+
+      throw err;
+    }
+  }
+
+  async updatePassword(id: number, passwordDto: UpdatePasswordDto) {
+    const member = await this.memberRepository.findOneBy({ id });
+
+    if (!member) {
+      throw new NotFoundException();
+    }
+
+    const result = await bcrypt.compare(
+      passwordDto.prevPassword,
+      member.password,
+    );
+
+    if (!result) {
+      throw new BadRequestException();
+    }
+
+    member.password = passwordDto.newPassword;
+    await this.memberRepository.update('password', member);
   }
 }
