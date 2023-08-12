@@ -12,8 +12,8 @@ import { JwtMember } from 'src/auth/decorator/jwt-member.decorator';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 
-@Controller('member')
 @Authorization()
+@Controller('members')
 export class MemberController {
   constructor(private readonly memberService: MemberService) {}
 
