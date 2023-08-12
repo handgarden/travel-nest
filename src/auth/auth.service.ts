@@ -1,7 +1,6 @@
 import { MemberService } from './../member/member.service';
 import { RegisterDto } from './dto/register.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
 import { NUM_AND_ALPHABET_ONLY, PASSWORD_REGEX } from './lib/regex';
 import { LoginDto } from './dto/login.dto';
 import { CreateMemberDto } from 'src/member/dto/create-member.dto';
@@ -24,10 +23,7 @@ export class AuthService {
     const createMemberDto = new CreateMemberDto();
     createMemberDto.account = registerDto.account;
     createMemberDto.nickname = registerDto.nickname;
-    createMemberDto.hashedPassword = await bcrypt.hash(
-      registerDto.password,
-      10,
-    );
+    createMemberDto.password = registerDto.password;
 
     return this.memberService.save(createMemberDto);
   }
@@ -44,7 +40,12 @@ export class AuthService {
       throw new BadRequestException();
     }
 
-    if (!(await this.validatePassword(loginDto.password, member.password))) {
+    if (
+      !(await this.memberService.validatePassword(
+        loginDto.password,
+        member.password,
+      ))
+    ) {
       throw new BadRequestException();
     }
 
@@ -75,9 +76,5 @@ export class AuthService {
     ) {
       throw new BadRequestException();
     }
-  }
-
-  private validatePassword(password: string, hashedPassword: string) {
-    return bcrypt.compare(password, hashedPassword);
   }
 }

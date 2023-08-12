@@ -1,7 +1,7 @@
 export class CreateMemberDto {
   account: string;
 
-  hashedPassword: string;
+  password: string;
 
   nickname: string;
 }

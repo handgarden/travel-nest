@@ -72,7 +72,7 @@ describe('MemberService', () => {
 
       const createMemberDto = new CreateMemberDto();
       createMemberDto.account = 'test';
-      createMemberDto.hashedPassword = 'password';
+      createMemberDto.password = 'password';
       createMemberDto.nickname = 'nickname';
       const result = await service.save(createMemberDto);
       expect(result).toEqual(1);
@@ -94,12 +94,12 @@ describe('MemberService', () => {
       );
       const createMemberDto = new CreateMemberDto();
       createMemberDto.account = 'test';
-      createMemberDto.hashedPassword = 'password';
+      createMemberDto.password = 'password';
       createMemberDto.nickname = 'nickname';
-      service.save(createMemberDto);
+      await service.save(createMemberDto);
       const createMemberDto2 = new CreateMemberDto();
       createMemberDto2.account = createMemberDto.account;
-      createMemberDto2.hashedPassword = 'password';
+      createMemberDto2.password = 'password';
       createMemberDto2.nickname = 'nickname2';
       await expect(async () => {
         await service.save(createMemberDto2);
@@ -123,12 +123,12 @@ describe('MemberService', () => {
       );
       const createMemberDto = new CreateMemberDto();
       createMemberDto.account = 'test';
-      createMemberDto.hashedPassword = 'password';
+      createMemberDto.password = 'password';
       createMemberDto.nickname = 'nickname';
-      service.save(createMemberDto);
+      await service.save(createMemberDto);
       const createMemberDto2 = new CreateMemberDto();
       createMemberDto2.account = 'test2';
-      createMemberDto2.hashedPassword = 'password';
+      createMemberDto2.password = 'password';
       createMemberDto2.nickname = createMemberDto.nickname;
       await expect(async () => {
         await service.save(createMemberDto2);
@@ -143,7 +143,7 @@ describe('MemberService', () => {
       });
       const createMemberDto = new CreateMemberDto();
       createMemberDto.account = 'test';
-      createMemberDto.hashedPassword = 'password';
+      createMemberDto.password = 'password';
       createMemberDto.nickname = 'nickname';
       await expect(async () => {
         await service.save(createMemberDto);

@@ -13,7 +13,6 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { Member } from 'src/member/entities/member.entity';
 import { Role } from 'src/member/enum/Role';
-import * as bcrypt from 'bcrypt';
 import { JwtPayload } from './dto/jwt.dto';
 import * as jwt from 'jsonwebtoken';
 
@@ -22,6 +21,7 @@ describe('AuthService', () => {
   const memberService: Partial<MemberService> = {
     save: jest.fn(),
     findByAccount: jest.fn(),
+    validatePassword: jest.fn(),
   };
   const jwtService: Partial<JwtService> = {
     sign: jest.fn(),
@@ -187,6 +187,10 @@ describe('AuthService', () => {
           return Promise.resolve(member);
         });
 
+      jest
+        .spyOn(memberService, 'validatePassword')
+        .mockReturnValue(Promise.resolve(false));
+
       const loginDto: LoginDto = {
         account: 'testAccount',
         password: 'password1234!',
@@ -204,11 +208,15 @@ describe('AuthService', () => {
           const member = new Member();
           member.id = 1;
           member.account = account;
-          member.password = await bcrypt.hash('password1234!', 10);
+          member.password = 'password1234!';
           member.nickname = 'nickname';
           member.role = Role.USER;
           return Promise.resolve(member);
         });
+
+      jest
+        .spyOn(memberService, 'validatePassword')
+        .mockReturnValue(Promise.resolve(true));
 
       jest
         .spyOn(jwtService, 'sign')

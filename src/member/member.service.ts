@@ -24,7 +24,7 @@ export class MemberService {
     const member = new Member();
 
     member.account = createMemberDto.account;
-    member.password = createMemberDto.hashedPassword;
+    member.password = await bcrypt.hash(createMemberDto.password, 10);
     member.nickname = createMemberDto.nickname;
     member.role = Role.USER;
 
@@ -100,7 +100,7 @@ export class MemberService {
       throw new NotFoundException();
     }
 
-    const result = await bcrypt.compare(
+    const result = await this.validatePassword(
       passwordDto.prevPassword,
       member.password,
     );
@@ -111,5 +111,9 @@ export class MemberService {
 
     member.password = passwordDto.newPassword;
     await this.memberRepository.update('password', member);
+  }
+
+  async validatePassword(password, hashedPassword) {
+    return await bcrypt.compare(password, hashedPassword);
   }
 }
