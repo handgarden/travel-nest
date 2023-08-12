@@ -20,9 +20,11 @@ export class RolesGuard implements CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    //AuthGuard 이후에 적용되는 가드로 로그인이 필요한 경로면 user가 무조건 있음, 없으면 이미 예외 던져서 여기로 안옴
     const user: JwtMemberDto = context.switchToHttp().getRequest().user;
 
+    //AuthGuard 이후에 적용되는 가드로 로그인 검증은 AuthGuard에서 이미 한 상태
+    //user가 없으면 로그인이 필요 없는 경로
+    //로그인이 필요한 경로에 유저가 없으면 AuthGuard에서 예외 던져서 여기로 안옴
     if (!user) {
       return true;
     }
