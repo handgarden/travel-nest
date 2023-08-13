@@ -11,6 +11,7 @@ import { Authorization } from 'src/auth/decorator/authorization.decorator';
 import { JwtMember } from 'src/auth/decorator/jwt-member.decorator';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { UpdateNicknameDto } from './dto/update-nickname.dto';
 
 @Authorization()
 @Controller('members')
@@ -26,13 +27,16 @@ export class MemberController {
   @HttpCode(HttpStatus.OK)
   async updateNickname(
     @JwtMember() member: JwtMemberDto,
-    @Body('nickname') updateNickname: string,
+    @Body() updateNicknameDto: UpdateNicknameDto,
   ) {
-    if (member.nickname === updateNickname) {
+    if (member.nickname === updateNicknameDto.nickname) {
       return 'success';
     }
 
-    await this.memberService.updateNickname(member.id, updateNickname);
+    await this.memberService.updateNickname(
+      member.id,
+      updateNicknameDto.nickname,
+    );
 
     return 'success';
   }

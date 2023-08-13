@@ -5,6 +5,7 @@ import { MemberService } from './member.service';
 import { Role } from './enum/Role';
 import { MemberProfile } from './dto/member-profile.dto';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
+import { UpdateNicknameDto } from './dto/update-nickname.dto';
 
 describe('MemberController', () => {
   let controller: MemberController;
@@ -49,7 +50,11 @@ describe('MemberController', () => {
     it('이전 닉네임과 동일한 닉네임으로 요청 시 바로 성공', async () => {
       const spy = jest.spyOn(service, 'updateNickname');
       const jwtMemberDto = new JwtMemberDto(1, 'nickname', Role.USER);
-      const success = await controller.updateNickname(jwtMemberDto, 'nickname');
+      const updateNicknameDto = new UpdateNicknameDto('nickname');
+      const success = await controller.updateNickname(
+        jwtMemberDto,
+        updateNicknameDto,
+      );
       expect(success).toEqual('success');
       expect(spy).not.toBeCalled();
     });
@@ -58,9 +63,10 @@ describe('MemberController', () => {
       const spy = jest.spyOn(service, 'updateNickname');
 
       const jwtMemberDto = new JwtMemberDto(1, 'nickname', Role.USER);
+      const updateNicknameDto = new UpdateNicknameDto('newNickname');
       const success = await controller.updateNickname(
         jwtMemberDto,
-        'newNickname',
+        updateNicknameDto,
       );
       expect(success).toEqual('success');
       expect(spy).toBeCalled();
