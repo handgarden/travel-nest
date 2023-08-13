@@ -218,9 +218,9 @@ describe('MemberService', () => {
         .spyOn(repository, 'findOneBy')
         .mockReturnValue(Promise.resolve(generateMember(1)));
 
-      jest
-        .spyOn(repository, 'update')
-        .mockReturnValue(Promise.resolve(new UpdateResult()));
+      const result = new UpdateResult();
+      result.affected = 1;
+      jest.spyOn(repository, 'update').mockReturnValue(Promise.resolve(result));
 
       service.updateNickname(1, 'nickname');
       expect(spy).toBeCalled();
@@ -259,11 +259,10 @@ describe('MemberService', () => {
         .spyOn(repository, 'findOneBy')
         .mockReturnValue(Promise.resolve(member));
 
-      jest.spyOn(repository, 'save').mockReturnValue(Promise.resolve(member));
+      const result = new UpdateResult();
+      result.affected = 1;
 
-      jest
-        .spyOn(repository, 'update')
-        .mockReturnValue(Promise.resolve(new UpdateResult()));
+      jest.spyOn(repository, 'update').mockReturnValue(Promise.resolve(result));
 
       service.updatePassword(1, {
         prevPassword: 'password',

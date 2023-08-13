@@ -10,6 +10,7 @@ import { MemberProfile } from './dto/member-profile.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import * as bcrypt from 'bcrypt';
 import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
+import { QueryNotAffectedException } from 'src/exception/query-not-affected.exception';
 
 @Injectable()
 export class MemberService {
@@ -76,7 +77,14 @@ export class MemberService {
     member.nickname = nickname;
 
     try {
-      await this.memberRepository.update('nickname', member);
+      const result = await this.memberRepository.update(
+        { id: member.id },
+        { nickname },
+      );
+
+      if (!result.affected || result.affected < 1) {
+        throw new QueryNotAffectedException();
+      }
     } catch (err) {
       if (err instanceof QueryFailedError) {
         const message = err.message;
@@ -106,11 +114,12 @@ export class MemberService {
       throw new BadRequestException();
     }
 
-    member.password = passwordDto.newPassword;
-    await this.memberRepository.update('password', member);
+    const encryptedPassword = await bcrypt.hash(passwordDto.newPassword, 10);
+
+    await this.memberRepository.update({ id }, { password: encryptedPassword });
   }
 
-  async validatePassword(password, hashedPassword) {
+  async validatePassword(password: string, hashedPassword: string) {
     return await bcrypt.compare(password, hashedPassword);
   }
 }
