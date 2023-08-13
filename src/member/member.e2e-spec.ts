@@ -50,7 +50,7 @@ describe('member', () => {
     await app.init();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     repository.clear();
     const createMemberDto = new CreateMemberDto();
     createMemberDto.account = 'account';
