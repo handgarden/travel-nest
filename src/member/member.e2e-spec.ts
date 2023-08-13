@@ -1,4 +1,5 @@
-import { INestApplication } from '@nestjs/common';
+import { UpdatePasswordDto } from './dto/update-password.dto';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { MemberModule } from './member.module';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
@@ -12,7 +13,8 @@ import { AuthModule } from 'src/auth/auth.module';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from './enum/Role';
 import * as request from 'supertest';
-import { MemberProfile } from './dto/member-profile.dto';
+import { UpdateNicknameDto } from './dto/update-nickname.dto';
+import { ResponseTemplateInterceptor } from 'src/response-template.interceptor';
 
 describe('member', () => {
   let app: INestApplication;
@@ -20,6 +22,8 @@ describe('member', () => {
   let service: MemberService;
   let jwtService: JwtService;
   let jwt: string;
+  let memberId: number;
+  const AUTH_HEADER = 'Authorization';
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -47,6 +51,9 @@ describe('member', () => {
     service = moduleRef.get<MemberService>(MemberService);
     jwtService = moduleRef.get<JwtService>(JwtService);
 
+    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalInterceptors(new ResponseTemplateInterceptor());
+
     await app.init();
   });
 
@@ -56,23 +63,67 @@ describe('member', () => {
     createMemberDto.account = 'account';
     createMemberDto.password = 'password1234!';
     createMemberDto.nickname = 'nickname';
-    const id = await service.save(createMemberDto);
+    memberId = await service.save(createMemberDto);
     const payload = {
-      sub: id,
+      sub: memberId,
       nickname: createMemberDto.nickname,
       role: Role.USER,
     };
     jwt = jwtService.sign(payload);
   });
 
+  //프로필 조회
   it('GET /', async () => {
     const res = await request(app.getHttpServer())
       .get('/members')
-      .set('Authorization', `bearer ${jwt}`)
+      .set(AUTH_HEADER, `bearer ${jwt}`)
       .accept('application/json')
       .send()
       .expect(200);
-    const body = res.body as MemberProfile;
-    expect(body.nickname).toEqual('nickname');
+    const body = res.body;
+    expect(body.response.nickname).toEqual('nickname');
+  });
+
+  //닉네임 변경
+  it('POST /nickname', async () => {
+    const nicknameDto = new UpdateNicknameDto('newNickname');
+    const res = await request(app.getHttpServer())
+      .post('/members/nickname')
+      .set(AUTH_HEADER, `bearer ${jwt}`)
+      .type('application/json')
+      .accept('application/json')
+      .send(nicknameDto)
+      .expect(200);
+
+    const body = res.body;
+    expect(body).toEqual({
+      success: true,
+      response: 'success',
+      error: null,
+    });
+
+    const member = await service.getProfile(memberId);
+    expect(member.nickname).toEqual('newNickname');
+  });
+
+  it('POST /password', async () => {
+    const passwordDto = new UpdatePasswordDto(
+      'password1234!',
+      'newPassword1234!',
+    );
+    const res = await request(app.getHttpServer())
+      .post('/members/password')
+      .set(AUTH_HEADER, `bearer ${jwt}`)
+      .type('application/json')
+      .accept('application/json')
+      .send(passwordDto)
+      .expect(200);
+
+    const body = res.body;
+    expect(body).toEqual({
+      success: true,
+      response: 'success',
+      error: null,
+    });
   });
 });
