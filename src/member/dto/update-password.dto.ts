@@ -5,4 +5,9 @@ export class UpdatePasswordDto {
 
   @PasswordRules()
   newPassword: string;
+
+  constructor(prevPassword?: string, newPassword?: string) {
+    this.prevPassword = prevPassword;
+    this.newPassword = newPassword;
+  }
 }
