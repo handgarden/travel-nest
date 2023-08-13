@@ -9,11 +9,12 @@ import {
   UpdateResult,
 } from 'typeorm';
 import { CreateMemberDto } from './dto/create-member.dto';
-import { DuplicateAccountException } from './exception/DuplicateAccount.exception';
-import { DuplicateNicknameException } from './exception/DuplicateNickname.exception';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { DuplicateAccountException } from './exception/duplicate-account.exception';
+import { DuplicateNicknameException } from './exception/duplicate-nickname.exception';
+import { BadRequestException } from '@nestjs/common';
 import { Role } from './enum/Role';
 import * as bcrypt from 'bcrypt';
+import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
 
 describe('MemberService', () => {
   let service: MemberService;
@@ -200,13 +201,13 @@ describe('MemberService', () => {
       expect(profile).toEqual({ nickname: 'nickname' });
     });
 
-    it('없는 회원 요청시 NotFoundException', async () => {
+    it('없는 회원 요청시 ResourceNotFoundException', async () => {
       jest
         .spyOn(repository, 'findOneBy')
         .mockImplementation(() => Promise.resolve(null));
 
       expect(async () => await service.getProfile(1)).rejects.toThrowError(
-        NotFoundException,
+        ResourceNotFoundException,
       );
     });
   });
@@ -230,7 +231,7 @@ describe('MemberService', () => {
 
       expect(
         async () => await service.updateNickname(1, 'nickname'),
-      ).rejects.toThrowError(NotFoundException);
+      ).rejects.toThrowError(ResourceNotFoundException);
       expect(spy).toBeCalled();
     });
 
@@ -280,7 +281,7 @@ describe('MemberService', () => {
             prevPassword: 'password',
             newPassword: 'newPassword',
           }),
-      ).rejects.toThrowError(NotFoundException);
+      ).rejects.toThrowError(ResourceNotFoundException);
       expect(spy).toBeCalled();
     });
 

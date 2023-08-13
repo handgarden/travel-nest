@@ -1,14 +1,14 @@
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { Test } from '@nestjs/testing';
-import { DuplicateAccountException } from '../member/exception/DuplicateAccount.exception';
+import { DuplicateAccountException } from '../member/exception/duplicate-account.exception';
 import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { MemberService } from 'src/member/member.service';
 import { CreateMemberDto } from 'src/member/dto/create-member.dto';
-import { DuplicateNicknameException } from 'src/member/exception/DuplicateNickname.exception';
+import { DuplicateNicknameException } from 'src/member/exception/duplicate-nickname.exception';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { Member } from 'src/member/entities/member.entity';

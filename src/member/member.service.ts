@@ -1,18 +1,15 @@
 import { CreateMemberDto } from './dto/create-member.dto';
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Member } from './entities/member.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 import { Role } from './enum/Role';
-import { DuplicateAccountException } from './exception/DuplicateAccount.exception';
-import { DuplicateNicknameException } from './exception/DuplicateNickname.exception';
+import { DuplicateAccountException } from './exception/duplicate-account.exception';
+import { DuplicateNicknameException } from './exception/duplicate-nickname.exception';
 import { MemberProfile } from './dto/member-profile.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import * as bcrypt from 'bcrypt';
+import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
 
 @Injectable()
 export class MemberService {
@@ -57,7 +54,7 @@ export class MemberService {
     const member = await this.memberRepository.findOneBy({ id });
 
     if (!member) {
-      throw new NotFoundException();
+      throw new ResourceNotFoundException();
     }
 
     const profile = new MemberProfile();
@@ -73,7 +70,7 @@ export class MemberService {
     const member = await this.memberRepository.findOneBy({ id });
 
     if (!member) {
-      throw new NotFoundException();
+      throw new ResourceNotFoundException();
     }
 
     member.nickname = nickname;
@@ -97,7 +94,7 @@ export class MemberService {
     const member = await this.memberRepository.findOneBy({ id });
 
     if (!member) {
-      throw new NotFoundException();
+      throw new ResourceNotFoundException();
     }
 
     const result = await this.validatePassword(
