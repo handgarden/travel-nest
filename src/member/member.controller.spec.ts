@@ -6,6 +6,7 @@ import { Role } from './enum/Role';
 import { MemberProfile } from './dto/member-profile.dto';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
 import { UpdateNicknameDto } from './dto/update-nickname.dto';
+import { BasicResponseMessage } from 'src/lib/basic-response.enum';
 
 describe('MemberController', () => {
   let controller: MemberController;
@@ -55,7 +56,7 @@ describe('MemberController', () => {
         jwtMemberDto,
         updateNicknameDto,
       );
-      expect(success).toEqual('success');
+      expect(success).toEqual(BasicResponseMessage.SUCCESS);
       expect(spy).not.toBeCalled();
     });
 
@@ -68,7 +69,7 @@ describe('MemberController', () => {
         jwtMemberDto,
         updateNicknameDto,
       );
-      expect(success).toEqual('success');
+      expect(success).toEqual(BasicResponseMessage.SUCCESS);
       expect(spy).toBeCalled();
     });
   });
@@ -85,7 +86,7 @@ describe('MemberController', () => {
         jwtMemberDto,
         updatePasswordDto,
       );
-      expect(success).toEqual('success');
+      expect(success).toEqual(BasicResponseMessage.SUCCESS);
       expect(spy).toBeCalled();
     });
   });

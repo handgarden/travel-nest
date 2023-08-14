@@ -15,6 +15,7 @@ import { Role } from './enum/Role';
 import * as request from 'supertest';
 import { UpdateNicknameDto } from './dto/update-nickname.dto';
 import { ResponseTemplateInterceptor } from 'src/response-template.interceptor';
+import { BasicResponseMessage } from 'src/lib/basic-response.enum';
 
 describe('member', () => {
   let app: INestApplication;
@@ -98,7 +99,7 @@ describe('member', () => {
     const body = res.body;
     expect(body).toEqual({
       success: true,
-      response: 'success',
+      response: BasicResponseMessage.SUCCESS,
       error: null,
     });
 
@@ -122,7 +123,7 @@ describe('member', () => {
     const body = res.body;
     expect(body).toEqual({
       success: true,
-      response: 'success',
+      response: BasicResponseMessage.SUCCESS,
       error: null,
     });
   });
