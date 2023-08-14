@@ -26,13 +26,17 @@ export class ErrorResponseFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-
-    const status = exception.getStatus();
-
     const errBody: ErrorResponse = {
-      status,
+      status: exception.getStatus(),
       message: exception.message,
     };
+
+    if (exception instanceof BadRequestException) {
+      const message = exception.getResponse()['message'];
+      if (message instanceof Array) {
+        errBody.message = message[0] || errBody.message;
+      }
+    }
 
     const template: ResponseTemplate<null> = {
       success: false,
