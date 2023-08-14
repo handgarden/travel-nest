@@ -29,7 +29,7 @@ export class ErrorResponseFilter implements ExceptionFilter {
     const status = exception.getStatus();
 
     const errBody: ErrorResponse = {
-      statusCode: status,
+      status,
       message: exception.message,
     };
 
@@ -39,6 +39,6 @@ export class ErrorResponseFilter implements ExceptionFilter {
       error: errBody,
     };
 
-    response.status(status).json(template);
+    response.status(200).json(template);
   }
 }
