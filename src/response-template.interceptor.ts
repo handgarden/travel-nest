@@ -9,7 +9,7 @@ import { Observable, map } from 'rxjs';
 export type ErrorResponse = {
   message: string;
   error?: string;
-  statusCode: number;
+  status: number;
 };
 
 export interface ResponseTemplate<T> {

@@ -4,6 +4,7 @@ import {
   Catch,
   ExceptionFilter,
   ForbiddenException,
+  HttpException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Response } from 'express';
@@ -22,7 +23,7 @@ import { CustomHttpException } from './exception/custom-http.exception';
   ResourceNotFoundException,
 )
 export class ErrorResponseFilter implements ExceptionFilter {
-  catch(exception: CustomHttpException, host: ArgumentsHost): void {
+  catch(exception: HttpException, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
