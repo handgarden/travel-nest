@@ -37,6 +37,10 @@ export class RolesGuard implements CanActivate {
       cl,
     ]);
 
+    if (user.role === Role.BANNED) {
+      throw new ForbiddenException();
+    }
+
     if (!requiedRoles.includes(user.role)) {
       throw new ForbiddenException();
     }
