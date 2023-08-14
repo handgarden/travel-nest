@@ -1,8 +1,8 @@
-import { LoginDto } from './dto/login.dto';
+import { LoginRequest } from './dto/login-request.dto';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterRequest } from './dto/register-request.dto';
 import { Role } from 'src/member/enum/Role';
 import * as jwt from 'jsonwebtoken';
 import { JwtPayload } from './dto/jwt.dto';
@@ -37,7 +37,7 @@ describe('AuthController', () => {
         .spyOn(authService, 'register')
         .mockImplementation(() => Promise.resolve(1));
 
-      const registerDto = new RegisterDto();
+      const registerDto = new RegisterRequest();
       registerDto.account = 'test';
       registerDto.password = 'password1234!';
       registerDto.nickname = 'nickname';
@@ -64,7 +64,7 @@ describe('AuthController', () => {
         });
       });
 
-      const loginDto = new LoginDto();
+      const loginDto = new LoginRequest();
       loginDto.account = 'test';
       loginDto.password = 'qwer1234';
       const { accessToken, profile } = await controller.login(loginDto);

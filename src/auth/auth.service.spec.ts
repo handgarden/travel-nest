@@ -1,5 +1,5 @@
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterRequest } from './dto/register-request.dto';
 import { Test } from '@nestjs/testing';
 import { DuplicateAccountException } from '../member/exception/duplicate-account.exception';
 import {
@@ -10,7 +10,7 @@ import { MemberService } from 'src/member/member.service';
 import { CreateMemberDto } from 'src/member/dto/create-member.dto';
 import { DuplicateNicknameException } from 'src/member/exception/duplicate-nickname.exception';
 import { JwtService } from '@nestjs/jwt';
-import { LoginDto } from './dto/login.dto';
+import { LoginRequest } from './dto/login-request.dto';
 import { Member } from 'src/member/entities/member.entity';
 import { Role } from 'src/member/enum/Role';
 import { JwtPayload } from './dto/jwt.dto';
@@ -55,7 +55,7 @@ describe('AuthService', () => {
         .spyOn(memberService, 'save')
         .mockImplementation(() => Promise.resolve(1));
 
-      const registerDto = new RegisterDto();
+      const registerDto = new RegisterRequest();
       registerDto.account = 'test';
       registerDto.password = 'password';
       registerDto.nickname = 'nickname';
@@ -78,12 +78,12 @@ describe('AuthService', () => {
           };
         })(),
       );
-      const registerDto = new RegisterDto();
+      const registerDto = new RegisterRequest();
       registerDto.account = 'test';
       registerDto.password = 'password';
       registerDto.nickname = 'nickname';
       await service.register(registerDto);
-      const registerDto2 = new RegisterDto();
+      const registerDto2 = new RegisterRequest();
       registerDto2.account = registerDto.account;
       registerDto2.password = 'password';
       registerDto2.nickname = 'nickname2';
@@ -106,12 +106,12 @@ describe('AuthService', () => {
           };
         })(),
       );
-      const registerDto = new RegisterDto();
+      const registerDto = new RegisterRequest();
       registerDto.account = 'test';
       registerDto.password = 'password';
       registerDto.nickname = 'nickname';
       await service.register(registerDto);
-      const registerDto2 = new RegisterDto();
+      const registerDto2 = new RegisterRequest();
       registerDto2.account = 'test2';
       registerDto2.password = 'password';
       registerDto2.nickname = registerDto.nickname;
@@ -124,7 +124,7 @@ describe('AuthService', () => {
       jest.spyOn(memberService, 'save').mockImplementation(() => {
         throw new InternalServerErrorException();
       });
-      const registerDto = new RegisterDto();
+      const registerDto = new RegisterRequest();
       registerDto.account = 'test';
       registerDto.password = 'password';
       registerDto.nickname = 'nickname';
@@ -136,7 +136,7 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('계정이 정해진 정규 표현식에 맞지 않으면 예외를 던진다.', async () => {
-      const loginDto: LoginDto = {
+      const loginDto: LoginRequest = {
         account: '123',
         password: 'password1234!',
       };
@@ -147,7 +147,7 @@ describe('AuthService', () => {
     });
 
     it('비밀번호가 정해진 정규 표현식에 맞지 않으면 예외를 던진다.', async () => {
-      const loginDto: LoginDto = {
+      const loginDto: LoginRequest = {
         account: 'testAccount',
         password: '123',
       };
@@ -167,7 +167,7 @@ describe('AuthService', () => {
 
           return Promise.resolve(new Member());
         });
-      const loginDto: LoginDto = {
+      const loginDto: LoginRequest = {
         account: 'testAccount',
         password: 'password1234!',
       };
@@ -191,7 +191,7 @@ describe('AuthService', () => {
         .spyOn(memberService, 'validatePassword')
         .mockReturnValue(Promise.resolve(false));
 
-      const loginDto: LoginDto = {
+      const loginDto: LoginRequest = {
         account: 'testAccount',
         password: 'password1234!',
       };
@@ -224,7 +224,7 @@ describe('AuthService', () => {
           return jwt.sign(payload, jwtSecret);
         });
 
-      const loginDto: LoginDto = {
+      const loginDto: LoginRequest = {
         account: 'testAccount',
         password: 'password1234!',
       };

@@ -1,4 +1,4 @@
-import { UpdatePasswordDto } from './dto/update-password.dto';
+import { UpdatePasswordRequest } from './dto/update-password-request.dto';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { MemberModule } from './member.module';
@@ -13,9 +13,9 @@ import { AuthModule } from 'src/auth/auth.module';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from './enum/Role';
 import * as request from 'supertest';
-import { UpdateNicknameDto } from './dto/update-nickname.dto';
 import { ResponseTemplateInterceptor } from 'src/response-template.interceptor';
-import { BasicResponseMessage } from 'src/lib/basic-response.enum';
+import { BasicResponseMessage } from 'src/common/basic-response.enum';
+import { UpdateNicknameRequest } from './dto/update-nickname-request.dto';
 
 describe('member', () => {
   let app: INestApplication;
@@ -87,7 +87,7 @@ describe('member', () => {
 
   //닉네임 변경
   it('POST /nickname', async () => {
-    const nicknameDto = new UpdateNicknameDto('newNickname');
+    const nicknameDto = new UpdateNicknameRequest('newNickname');
     const res = await request(app.getHttpServer())
       .post('/members/nickname')
       .set(AUTH_HEADER, `bearer ${jwt}`)
@@ -108,7 +108,7 @@ describe('member', () => {
   });
 
   it('POST /password', async () => {
-    const passwordDto = new UpdatePasswordDto(
+    const passwordDto = new UpdatePasswordRequest(
       'password1234!',
       'newPassword1234!',
     );

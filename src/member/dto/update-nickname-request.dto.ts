@@ -1,6 +1,6 @@
 import { NoSpecialCharacters } from 'src/auth/decorator/validation.decorator';
 
-export class UpdateNicknameDto {
+export class UpdateNicknameRequest {
   @NoSpecialCharacters()
   nickname: string;
 

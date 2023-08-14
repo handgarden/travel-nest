@@ -5,7 +5,7 @@ import {
   PasswordRules,
 } from 'src/auth/decorator/validation.decorator';
 
-export class RegisterDto {
+export class RegisterRequest {
   @IsNotEmpty()
   @Length(4, 20)
   @NumberAndAlphabetOnly()

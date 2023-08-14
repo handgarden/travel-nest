@@ -6,7 +6,7 @@ import configuration, { ConfigProperties } from './config/configuration';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { MemberModule } from './member/member.module';
 import { AuthModule } from './auth/auth.module';
-import { DestinationModule } from './destination/destination.module';
+import { DestinationsModule } from './destinations/destinations.module';
 
 @Module({
   imports: [
@@ -26,7 +26,7 @@ import { DestinationModule } from './destination/destination.module';
     }),
     MemberModule,
     AuthModule,
-    DestinationModule,
+    DestinationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

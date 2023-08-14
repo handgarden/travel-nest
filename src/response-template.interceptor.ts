@@ -28,8 +28,12 @@ export class ResponseTemplateInterceptor
   ):
     | Observable<ResponseTemplate<any>>
     | Promise<Observable<ResponseTemplate<any>>> {
-    return next
-      .handle()
-      .pipe(map((data) => ({ success: true, response: data, error: null })));
+    return next.handle().pipe(
+      map((data) => ({
+        success: true,
+        response: data !== undefined ? data : null,
+        error: null,
+      })),
+    );
   }
 }

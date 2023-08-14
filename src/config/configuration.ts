@@ -7,6 +7,22 @@ export enum ConfigProperties {
 }
 
 export default () => {
+  const parseBool = (data: any) => {
+    if (!data) {
+      return false;
+    }
+
+    if (typeof data === 'string' && data !== 'true') {
+      return false;
+    }
+
+    if (typeof data === 'number' && data !== 1) {
+      return false;
+    }
+
+    return true;
+  };
+
   const TypeOrmModuleOptions: TypeOrmModuleOptions = {
     type: (process.env.DATABASE_TYPE as 'mysql') || 'sqlite',
     host: process.env.DATABASE_HOST,
@@ -15,6 +31,7 @@ export default () => {
     password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE_DATABASE,
     autoLoadEntities: true,
+    logging: parseBool(process.env.DATABASE_LOGGING),
     synchronize:
       process.env.DATABASE_SYNCHRONIZE &&
       process.env.DATABASE_SYNCHRONIZE === 'true'

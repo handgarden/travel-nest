@@ -1,12 +1,12 @@
-import { UpdatePasswordDto } from './dto/update-password.dto';
+import { UpdatePasswordRequest } from './dto/update-password-request.dto';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MemberController } from './member.controller';
 import { MemberService } from './member.service';
 import { Role } from './enum/Role';
 import { MemberProfile } from './dto/member-profile.dto';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
-import { UpdateNicknameDto } from './dto/update-nickname.dto';
-import { BasicResponseMessage } from 'src/lib/basic-response.enum';
+import { BasicResponseMessage } from 'src/common/basic-response.enum';
+import { UpdateNicknameRequest } from './dto/update-nickname-request.dto';
 
 describe('MemberController', () => {
   let controller: MemberController;
@@ -51,7 +51,7 @@ describe('MemberController', () => {
     it('이전 닉네임과 동일한 닉네임으로 요청 시 바로 성공', async () => {
       const spy = jest.spyOn(service, 'updateNickname');
       const jwtMemberDto = new JwtMemberDto(1, 'nickname', Role.USER);
-      const updateNicknameDto = new UpdateNicknameDto('nickname');
+      const updateNicknameDto = new UpdateNicknameRequest('nickname');
       const success = await controller.updateNickname(
         jwtMemberDto,
         updateNicknameDto,
@@ -64,7 +64,7 @@ describe('MemberController', () => {
       const spy = jest.spyOn(service, 'updateNickname');
 
       const jwtMemberDto = new JwtMemberDto(1, 'nickname', Role.USER);
-      const updateNicknameDto = new UpdateNicknameDto('newNickname');
+      const updateNicknameDto = new UpdateNicknameRequest('newNickname');
       const success = await controller.updateNickname(
         jwtMemberDto,
         updateNicknameDto,
@@ -79,7 +79,7 @@ describe('MemberController', () => {
       const spy = jest.spyOn(service, 'updatePassword');
 
       const jwtMemberDto = new JwtMemberDto(1, 'nickname', Role.USER);
-      const updatePasswordDto = new UpdatePasswordDto();
+      const updatePasswordDto = new UpdatePasswordRequest();
       updatePasswordDto.prevPassword = 'password';
       updatePasswordDto.newPassword = 'newPassword';
       const success = await controller.updatePassword(

@@ -1,14 +1,9 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { DefaultEntity } from 'src/common/entity/default.entity';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { Role } from '../enum/Role';
 
 @Entity()
-export class Member {
+export class Member extends DefaultEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -23,10 +18,4 @@ export class Member {
 
   @Column({ unique: true })
   nickname: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

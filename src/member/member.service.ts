@@ -7,7 +7,7 @@ import { Role } from './enum/Role';
 import { DuplicateAccountException } from './exception/duplicate-account.exception';
 import { DuplicateNicknameException } from './exception/duplicate-nickname.exception';
 import { MemberProfile } from './dto/member-profile.dto';
-import { UpdatePasswordDto } from './dto/update-password.dto';
+import { UpdatePasswordRequest } from './dto/update-password-request.dto';
 import * as bcrypt from 'bcrypt';
 import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
 import { QueryNotAffectedException } from 'src/exception/query-not-affected.exception';
@@ -98,7 +98,7 @@ export class MemberService {
     }
   }
 
-  async updatePassword(id: number, passwordDto: UpdatePasswordDto) {
+  async updatePassword(id: number, passwordDto: UpdatePasswordRequest) {
     const member = await this.memberRepository.findOneBy({ id });
 
     if (!member) {

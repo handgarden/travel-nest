@@ -6,8 +6,8 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import configuration from 'src/config/configuration';
 import { Member } from 'src/member/entities/member.entity';
 import * as request from 'supertest';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { RegisterRequest } from './dto/register-request.dto';
+import { LoginRequest } from './dto/login-request.dto';
 import { AuthService } from './auth.service';
 import { Repository } from 'typeorm';
 
@@ -52,7 +52,7 @@ describe('auth', () => {
   });
 
   it('/POST register', () => {
-    const registerDto = new RegisterDto();
+    const registerDto = new RegisterRequest();
     registerDto.account = 'testAccount';
     registerDto.nickname = 'nickname';
     registerDto.password = 'password1234!';
@@ -64,13 +64,13 @@ describe('auth', () => {
   });
 
   it('/POST login', async () => {
-    const registerDto = new RegisterDto();
+    const registerDto = new RegisterRequest();
     registerDto.account = 'test';
     registerDto.nickname = 'nickname';
     registerDto.password = 'password1234!';
     await service.register(registerDto);
 
-    const loginDto = new LoginDto();
+    const loginDto = new LoginRequest();
     loginDto.account = registerDto.account;
     loginDto.password = registerDto.password;
     return request(app.getHttpServer())

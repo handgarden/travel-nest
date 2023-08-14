@@ -1,8 +1,8 @@
 import { MemberService } from './../member/member.service';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterRequest } from './dto/register-request.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { NUM_AND_ALPHABET_ONLY, PASSWORD_REGEX } from './lib/regex';
-import { LoginDto } from './dto/login.dto';
+import { LoginRequest } from './dto/login-request.dto';
 import { CreateMemberDto } from 'src/member/dto/create-member.dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './dto/jwt.dto';
@@ -20,7 +20,7 @@ export class AuthService {
    * @param registerDto 계정 & 비밀번호 & 닉네임
    * @returns
    */
-  async register(registerDto: RegisterDto): Promise<number> {
+  async register(registerDto: RegisterRequest): Promise<number> {
     const createMemberDto = new CreateMemberDto();
     createMemberDto.account = registerDto.account;
     createMemberDto.nickname = registerDto.nickname;
@@ -33,7 +33,7 @@ export class AuthService {
    * 로그인
    * @param loginDto 계정 & 비밀번호
    */
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginRequest) {
     this.validateLoginInfo(loginDto.account, loginDto.password);
     const member = await this.memberService.findByAccount(loginDto.account);
 
