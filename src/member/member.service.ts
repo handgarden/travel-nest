@@ -105,13 +105,14 @@ export class MemberService {
       throw new ResourceNotFoundException();
     }
 
-    const result = await this.validatePassword(
-      passwordDto.prevPassword,
-      member.password,
-    );
-
-    if (!result) {
+    if (
+      !(await this.validatePassword(passwordDto.prevPassword, member.password))
+    ) {
       throw new BadRequestException();
+    }
+
+    if (passwordDto.prevPassword === passwordDto.newPassword) {
+      return;
     }
 
     const encryptedPassword = await bcrypt.hash(passwordDto.newPassword, 10);

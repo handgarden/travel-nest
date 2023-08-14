@@ -253,7 +253,7 @@ describe('MemberService', () => {
   });
 
   describe('updatePassword', () => {
-    it('정상 처리 시 반환 없음', () => {
+    it('정상 처리 시 반환 없음', async () => {
       const member = generateMember(1);
       const spy = jest
         .spyOn(repository, 'findOneBy')
@@ -262,13 +262,16 @@ describe('MemberService', () => {
       const result = new UpdateResult();
       result.affected = 1;
 
-      jest.spyOn(repository, 'update').mockReturnValue(Promise.resolve(result));
+      const spy2 = jest
+        .spyOn(repository, 'update')
+        .mockReturnValue(Promise.resolve(result));
 
-      service.updatePassword(1, {
+      await service.updatePassword(1, {
         prevPassword: 'password',
         newPassword: 'newPassword',
       });
       expect(spy).toBeCalled();
+      expect(spy2).toBeCalled();
     });
 
     it('변경하려는 회원이 존재하지 않으면 NotFoundException', () => {
@@ -296,6 +299,26 @@ describe('MemberService', () => {
             newPassword: 'newPassword',
           }),
       ).rejects.toThrowError(BadRequestException);
+    });
+
+    it('변경 비밀번호와 현재 비밀번호가 동일하면 update 쿼리 없이 성공 처리', async () => {
+      jest
+        .spyOn(repository, 'findOneBy')
+        .mockReturnValue(Promise.resolve(generateMember(1)));
+
+      const result = new UpdateResult();
+      result.affected = 1;
+
+      const spy = jest
+        .spyOn(repository, 'update')
+        .mockReturnValue(Promise.resolve(result));
+
+      await service.updatePassword(1, {
+        prevPassword: 'password',
+        newPassword: 'password',
+      });
+
+      expect(spy).not.toBeCalled();
     });
   });
 });
