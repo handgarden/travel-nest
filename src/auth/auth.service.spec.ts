@@ -201,7 +201,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('검증을 통과하고 로그인에 성공하면 jwt 토큰을 반환한다.', async () => {
+    it('검증을 통과하고 로그인에 성공하면 jwt 토큰과 프로필을 반환한다.', async () => {
       jest
         .spyOn(memberService, 'findByAccount')
         .mockImplementation(async (account: string) => {
@@ -229,7 +229,7 @@ describe('AuthService', () => {
         password: 'password1234!',
       };
 
-      const { accessToken } = await service.login(loginDto);
+      const { accessToken, profile } = await service.login(loginDto);
 
       const payload = jwt.verify(
         accessToken,
@@ -239,6 +239,8 @@ describe('AuthService', () => {
       expect(payload.sub).toEqual(1);
       expect(payload.nickname).toEqual('nickname');
       expect(payload.role).toEqual(Role.USER);
+
+      expect(profile.nickname).toEqual('nickname');
     });
   });
 });

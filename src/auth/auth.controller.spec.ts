@@ -56,20 +56,26 @@ describe('AuthController', () => {
         };
         return Promise.resolve({
           accessToken: jwt.sign(jwtPayload, 'secret'),
+          profile: {
+            nickname: jwtPayload.nickname,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
         });
       });
 
       const loginDto = new LoginDto();
       loginDto.account = 'test';
       loginDto.password = 'qwer1234';
-      const token = await controller.login(loginDto);
-      const parsedPayload = jwt.verify(token.accessToken, 'secret');
+      const { accessToken, profile } = await controller.login(loginDto);
+      const parsedPayload = jwt.verify(accessToken, 'secret');
       delete parsedPayload['iat'];
       expect(parsedPayload).toEqual({
         sub: 1,
         nickname: 'nickname',
         role: Role.USER,
       });
+      expect(profile.nickname).toEqual('nickname');
     });
   });
 });

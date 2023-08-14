@@ -6,6 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import { CreateMemberDto } from 'src/member/dto/create-member.dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './dto/jwt.dto';
+import { MemberProfile } from 'src/member/dto/member-profile.dto';
 
 @Injectable()
 export class AuthService {
@@ -55,8 +56,17 @@ export class AuthService {
       role: member.role,
     };
 
+    const accessToken = this.jwtService.sign(payload);
+
+    const profile = new MemberProfile();
+
+    profile.nickname = member.nickname;
+    profile.createdAt = member.createdAt;
+    profile.updatedAt = member.updatedAt;
+
     return {
-      accessToken: this.jwtService.sign(payload),
+      accessToken,
+      profile,
     };
   }
 
