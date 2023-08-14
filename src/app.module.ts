@@ -2,8 +2,10 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import configuration from './config/configuration';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import configuration, { ConfigProperties } from './config/configuration';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { MemberModule } from './member/member.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -12,13 +14,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         ? `.env.${process.env.NODE_ENV}`
         : '.env.development',
       load: [configuration],
+      isGlobal: true,
     }),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
       useFactory: (configService: ConfigService) =>
-        configService.get('TypeOrmModuleOptions'),
+        configService.get<TypeOrmModuleOptions>(
+          ConfigProperties.TypeOrmModuleOptions,
+        ),
       inject: [ConfigService],
     }),
+    MemberModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
