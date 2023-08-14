@@ -18,6 +18,15 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
 
+  if (process.env.NODE_ENV === 'development') {
+    app.enableCors({
+      origin: 'http://localhost:3000',
+      methods: '*',
+      preflightContinue: false,
+      credentials: true,
+    });
+  }
+
   await app.listen(port);
 }
 bootstrap();
