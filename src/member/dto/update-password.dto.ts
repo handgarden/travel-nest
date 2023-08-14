@@ -1,6 +1,7 @@
 import { PasswordRules } from 'src/auth/decorator/validation.decorator';
 
 export class UpdatePasswordDto {
+  @PasswordRules()
   prevPassword: string;
 
   @PasswordRules()
