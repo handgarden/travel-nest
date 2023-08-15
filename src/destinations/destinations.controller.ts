@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { DestinationsService } from './destinations.service';
 import { CreateDestinationRequest } from './dto/create-destination-request.dto';
@@ -35,7 +36,7 @@ export class DestinationsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.destinationsService.findOne(+id);
   }
 

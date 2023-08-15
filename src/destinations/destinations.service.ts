@@ -15,6 +15,7 @@ import { PageResponse } from 'src/common/page-response.dto';
 import { DestinationResponse } from './dto/destination-response.dto';
 import { DestinationQuery } from './dto/destination-query.dto';
 import { Category } from './category.enum';
+import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
 
 @Injectable()
 export class DestinationsService {
@@ -57,8 +58,6 @@ export class DestinationsService {
   }
 
   async findAll(destinationQuery: DestinationQuery) {
-    console.log(destinationQuery);
-
     const qb = this.repository.createQueryBuilder('destination');
 
     let needWhere = true;
@@ -104,8 +103,19 @@ export class DestinationsService {
     return new PageResponse(result, total);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} destination`;
+  async findOne(id: number) {
+    const destination = await this.repository.find({
+      where: { id },
+      relations: {
+        creator: true,
+      },
+    });
+
+    if (destination.length < 1) {
+      throw new ResourceNotFoundException();
+    }
+
+    return DestinationResponse.createResponse(destination[0]);
   }
 
   update(id: number, updateDestinationDto: UpdateDestinationRequest) {
