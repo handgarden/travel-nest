@@ -1,6 +1,10 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateDestinationRequest } from './create-destination-request.dto';
+import { IsNotEmpty, Length } from 'class-validator';
 
-export class UpdateDestinationRequest extends PartialType(
-  CreateDestinationRequest,
-) {}
+export class UpdateDestinationRequest {
+  @IsNotEmpty()
+  @Length(1, 30)
+  title: string;
+
+  @IsNotEmpty()
+  address: string;
+}

@@ -16,6 +16,9 @@ import { DestinationResponse } from './dto/destination-response.dto';
 import { DestinationQuery } from './dto/destination-query.dto';
 import { Category } from './category.enum';
 import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
+import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
+import { BasicResponseMessage } from 'src/common/basic-response.enum';
+import { QueryNotAffectedException } from 'src/exception/query-not-affected.exception';
 
 @Injectable()
 export class DestinationsService {
@@ -34,9 +37,7 @@ export class DestinationsService {
       throw new UnauthorizedException();
     }
 
-    if (member.role === Role.BANNED) {
-      throw new ForbiddenException();
-    }
+    this.checkIsBannedMember(member);
 
     const destinaton = new Destination();
     destinaton.category = createDestinationDto.category;
@@ -118,12 +119,67 @@ export class DestinationsService {
     return DestinationResponse.createResponse(destination[0]);
   }
 
-  update(id: number, updateDestinationDto: UpdateDestinationRequest) {
-    return `This action updates a #${id} destination`;
+  async update(
+    member: JwtMemberDto,
+    id: number,
+    updateDestinationDto: UpdateDestinationRequest,
+  ) {
+    this.checkIsBannedMember(member);
+
+    const destinations = await this.repository.find({
+      where: { id },
+      relations: { creator: true },
+    });
+
+    if (destinations.length < 1) {
+      throw new ResourceNotFoundException();
+    }
+
+    const destination = destinations[0];
+
+    this.validateAuthorization(member, await destination.creator);
+
+    this.changeToRealUpdateDto(updateDestinationDto, destination);
+
+    if (Object.getOwnPropertyNames(updateDestinationDto).length < 1) {
+      return BasicResponseMessage.SUCCESS;
+    }
+
+    try {
+      const result = await this.repository.update({ id }, updateDestinationDto);
+
+      if (result.affected && result.affected < 1) {
+        throw new QueryNotAffectedException();
+      }
+
+      return BasicResponseMessage.SUCCESS;
+    } catch (err) {
+      if (err instanceof QueryFailedError) {
+        const message = err.message;
+        if (message.includes('UNIQUE')) {
+          throw new DuplicateDestinationException();
+        }
+        throw err;
+      }
+
+      throw err;
+    }
   }
 
   remove(id: number) {
     return `This action removes a #${id} destination`;
+  }
+
+  private checkIsBannedMember(member: JwtMemberDto | Member) {
+    if (member.role === Role.BANNED) {
+      throw new ForbiddenException();
+    }
+  }
+
+  private validateAuthorization(requestMember: JwtMemberDto, creator: Member) {
+    if (requestMember.id !== creator.id) {
+      throw new ForbiddenException();
+    }
   }
 
   private createCategoryQuery(categories: Category[]) {
@@ -146,5 +202,18 @@ export class DestinationsService {
         query: `%${query}%`,
       });
     });
+  }
+
+  private changeToRealUpdateDto(
+    updateDto: UpdateDestinationRequest,
+    destination: Destination,
+  ) {
+    if (destination.title === updateDto.title) {
+      delete updateDto.title;
+    }
+
+    if (destination.address === updateDto.address) {
+      delete updateDto.address;
+    }
   }
 }

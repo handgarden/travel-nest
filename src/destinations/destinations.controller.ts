@@ -41,11 +41,13 @@ export class DestinationsController {
   }
 
   @Patch(':id')
+  @Authorization()
   update(
-    @Param('id') id: string,
+    @JwtMember() member: JwtMemberDto,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateDestinationDto: UpdateDestinationRequest,
   ) {
-    return this.destinationsService.update(+id, updateDestinationDto);
+    return this.destinationsService.update(member, id, updateDestinationDto);
   }
 
   @Delete(':id')
