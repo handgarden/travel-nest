@@ -18,7 +18,7 @@ export class Destination extends DefaultEntity {
 
   @ManyToOne(() => Member)
   @JoinColumn()
-  creator: Member;
+  creator: Promise<Member>;
 
   @Column()
   title: string;

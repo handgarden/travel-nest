@@ -13,6 +13,8 @@ import { UpdateDestinationRequest } from './dto/update-destination-request.dto';
 import { Authorization } from 'src/auth/decorator/authorization.decorator';
 import { JwtMember } from 'src/auth/decorator/jwt-member.decorator';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
+import { DestinationQueryOptions } from './decorator/destination-query-options.decorator';
+import { DestinationQuery } from './dto/destination-query.dto';
 
 @Controller('destinations')
 export class DestinationsController {
@@ -28,8 +30,8 @@ export class DestinationsController {
   }
 
   @Get()
-  findAll() {
-    return this.destinationsService.findAll();
+  findAll(@DestinationQueryOptions() query: DestinationQuery) {
+    return this.destinationsService.findAll(query);
   }
 
   @Get(':id')
