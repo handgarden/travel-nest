@@ -123,8 +123,6 @@ export class DestinationsService {
     id: number,
     updateDestinationDto: UpdateDestinationRequest,
   ) {
-    this.checkIsBannedMember(member);
-
     const destinations = await this.repository.find({
       where: { id },
       relations: { creator: true },
@@ -136,7 +134,11 @@ export class DestinationsService {
 
     const destination = destinations[0];
 
-    this.validateAuthorization(member, await destination.creator);
+    const creator = await destination.creator;
+
+    this.validateAuthorization(member, creator);
+
+    this.checkIsBannedMember(creator);
 
     this.changeToRealUpdateDto(updateDestinationDto, destination);
 
@@ -187,7 +189,7 @@ export class DestinationsService {
 
   //==============================================================================
 
-  private checkIsBannedMember(member: JwtMemberDto | Member) {
+  private checkIsBannedMember(member: Member) {
     if (member.role === Role.BANNED) {
       throw new ForbiddenException();
     }
