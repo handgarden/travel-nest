@@ -1,11 +1,10 @@
-import { UUID } from 'crypto';
 import { Member } from 'src/member/entities/member.entity';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class UploadFile {
   @PrimaryColumn()
-  storeFileName: UUID;
+  storeFileName: string;
 
   @Column()
   uploadFileName: string;

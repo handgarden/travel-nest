@@ -5,39 +5,42 @@ import {
   Param,
   Delete,
   UploadedFiles,
+  Res,
 } from '@nestjs/common';
 import { FileService } from './file.service';
 import { MultiFileHandler } from './decorator/multiple-file-handler.decorator';
 import { MultiFileValidationPipe } from './pipe/muti-file-validator.pipe';
+import { Authorization } from 'src/auth/decorator/authorization.decorator';
+import { JwtMember } from 'src/auth/decorator/jwt-member.decorator';
+import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
+import { Response } from 'express';
 
 @Controller('files')
 export class FileController {
   constructor(private readonly fileService: FileService) {}
 
   @Post()
+  @Authorization()
   @MultiFileHandler([{ name: 'file' }])
-  create(
+  saveFiles(
+    @JwtMember() member: JwtMemberDto,
     @UploadedFiles(MultiFileValidationPipe)
-    file: Express.Multer.File[],
+    files: Express.Multer.File[],
   ) {
-    console.log(file);
-    return this.fileService.create(file);
+    return this.fileService.storeFiles(member.id, files);
   }
 
-  @Get()
-  findAll() {
-    return this.fileService.findAll();
-  }
-
+  /**
+   * 로컬용, 실제에선 프론트가 s3로 요청
+   * @param id 파일 id
+   * @param res response
+   * @returns file
+   */
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.fileService.findOne(+id);
+  async downloadFile(@Param('id') id: string, @Res() res: Response) {
+    const path = await this.fileService.getFilePath(id);
+    res.sendFile(path);
   }
-
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateFileDto: UpdateFileDto) {
-  //   return this.fileService.update(+id, updateFileDto);
-  // }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
