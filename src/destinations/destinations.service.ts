@@ -99,7 +99,6 @@ export class DestinationsService {
     const result: DestinationResponse[] = await finalQuery.getRawMany();
 
     const total = await finalQuery.getCount();
-    console.log(total);
 
     return new PageResponse(result, total);
   }
@@ -166,9 +165,27 @@ export class DestinationsService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} destination`;
+  async remove(requestMember: JwtMemberDto, id: number) {
+    const destinations = await this.repository.find({
+      where: { id },
+      relations: {
+        creator: true,
+      },
+    });
+
+    if (destinations.length < 1) {
+      return BasicResponseMessage.SUCCESS;
+    }
+
+    const destination = destinations[0];
+    const creator = await destination.creator;
+    this.validateAuthorization(requestMember, creator);
+    this.checkIsBannedMember(creator);
+
+    this.repository.delete({ id });
   }
+
+  //==============================================================================
 
   private checkIsBannedMember(member: JwtMemberDto | Member) {
     if (member.role === Role.BANNED) {

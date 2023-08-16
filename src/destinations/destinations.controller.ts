@@ -37,7 +37,7 @@ export class DestinationsController {
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.destinationsService.findOne(+id);
+    return this.destinationsService.findOne(id);
   }
 
   @Patch(':id')
@@ -51,7 +51,11 @@ export class DestinationsController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.destinationsService.remove(+id);
+  @Authorization()
+  remove(
+    @JwtMember() member: JwtMemberDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.destinationsService.remove(member, id);
   }
 }
