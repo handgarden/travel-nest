@@ -7,6 +7,7 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { MemberModule } from './member/member.module';
 import { AuthModule } from './auth/auth.module';
 import { DestinationsModule } from './destinations/destinations.module';
+import { FileModule } from './file/file.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { DestinationsModule } from './destinations/destinations.module';
     MemberModule,
     AuthModule,
     DestinationsModule,
+    FileModule,
   ],
   controllers: [AppController],
   providers: [AppService],
