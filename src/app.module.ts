@@ -7,6 +7,7 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { MemberModule } from './member/member.module';
 import { AuthModule } from './auth/auth.module';
 import { DestinationsModule } from './destinations/destinations.module';
+import { DescriptionsModule } from './descriptions/descriptions.module';
 import { FileModule } from './file/file.module';
 
 @Module({
@@ -28,6 +29,7 @@ import { FileModule } from './file/file.module';
     MemberModule,
     AuthModule,
     DestinationsModule,
+    DescriptionsModule,
     FileModule,
   ],
   controllers: [AppController],
