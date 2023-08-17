@@ -8,10 +8,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Member } from 'src/member/entities/member.entity';
 import { Role } from 'src/member/enum/Role';
-import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
 import { ConfigService } from '@nestjs/config';
-import { ConfigProperties, StorageOptions } from 'src/config/configuration';
-import * as fs from 'fs';
+import { AbstractStorage } from './storage/abstract-storage';
+import { LocalStorage } from './storage/local-storage';
 
 @Injectable()
 export class FileService {
@@ -21,6 +20,7 @@ export class FileService {
     @InjectRepository(Member) private memberRepository: Repository<Member>,
     private dataSource: DataSource,
     private configService: ConfigService,
+    private fileStorage: AbstractStorage,
   ) {}
 
   async storeFiles(memberId: number, files: Express.Multer.File[]) {
@@ -49,9 +49,9 @@ export class FileService {
     }
   }
 
-  async remove(memberId: number, id: string) {
+  async remove(memberId: number, storeFileName: string) {
     const files = await this.fileRepository.find({
-      where: { storeFileName: id },
+      where: { storeFileName },
       relations: { creator: true },
     });
 
@@ -70,14 +70,7 @@ export class FileService {
 
     await this.fileRepository.remove(file);
 
-    try {
-      const path = await this.getFilePath(id);
-      await fs.promises.rm(path);
-    } catch (err) {
-      console.log(err);
-    } finally {
-      return true;
-    }
+    await this.fileStorage.removeFile(storeFileName);
   }
 
   private checkAuth(member: Member) {
@@ -91,21 +84,14 @@ export class FileService {
 
   /**
    * 개발용 이미지 확인
-   * @param id
+   * @param storeFileName
    * @returns
    */
-  async getFilePath(id: string) {
-    const path = this.configService.get<StorageOptions>(
-      ConfigProperties.StorageOptions,
-    ).path;
-
-    const filePath = `${path}/${id}`;
-
-    try {
-      await fs.promises.access(filePath, fs.constants.F_OK);
-      return filePath;
-    } catch (err) {
-      throw new ResourceNotFoundException();
+  async getFilePath(storeFileName: string) {
+    if (!(this.fileStorage instanceof LocalStorage)) {
+      throw new Error('로컬 스토리지가 아닙니다.');
     }
+
+    return this.fileStorage.getFilePath(storeFileName);
   }
 }

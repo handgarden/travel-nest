@@ -20,6 +20,7 @@ import { Member } from 'src/member/entities/member.entity';
       }),
       inject: [AbstractStorage],
     }),
+    FileStorageModule,
   ],
   controllers: [FileController],
   providers: [

@@ -1,7 +1,9 @@
 import { StorageEngine } from 'multer';
-import s3Storage from 'multer-s3';
-import { S3Client } from '@aws-sdk/client-s3';
 import { AbstractStorage } from './abstract-storage';
+import s3Storage = require('multer-s3');
+import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { Injectable } from '@nestjs/common';
+import { StorageType } from './storage-type.enum';
 
 type S3StorageOptions = {
   s3: S3Client;
@@ -65,11 +67,27 @@ type S3StorageOptions = {
     | undefined;
 };
 
+@Injectable()
 export class S3Storage extends AbstractStorage {
+  private options: S3StorageOptions;
   constructor(options: S3StorageOptions) {
-    super(s3Storage(options));
+    super(StorageType.S3, s3Storage(options));
+    this.options = options;
   }
   getStorage(): StorageEngine {
     return this.storage;
+  }
+
+  async removeFile(storeFileName: string): Promise<void> {
+    const command = new DeleteObjectCommand({
+      Bucket: this.options.bucket as string,
+      Key: storeFileName,
+    });
+
+    try {
+      this.options.s3.send(command);
+    } catch (err) {
+      this.logger.error(err);
+    }
   }
 }

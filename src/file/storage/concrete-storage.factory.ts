@@ -1,9 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import {
-  ConfigProperties,
-  StorageOptions,
-  StorageType,
-} from 'src/config/configuration';
+import { ConfigProperties, StorageOptions } from 'src/config/configuration';
 import * as multer from 'multer';
 import { AbstractFileNamingStrategy } from './filename/abstract-file-naming.strategy';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
@@ -13,6 +9,7 @@ import { S3Client } from '@aws-sdk/client-s3';
 import { AbstractStorage } from './abstract-storage';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { StorageType } from './storage-type.enum';
 
 /**
  * ENV에 정의한 StorageType에 따라 LOCAL 혹은 S3를 반환
@@ -47,7 +44,7 @@ export class ConcreteStorageFactory {
       },
       filename: this.namingStrategy.createStoreFileName,
     };
-    return new LocalStorage(options);
+    return new LocalStorage(options, path);
   }
 
   private createS3Storage() {

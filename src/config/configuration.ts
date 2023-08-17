@@ -1,6 +1,7 @@
 import { JwtModuleOptions } from '@nestjs/jwt';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { resolve } from 'path';
+import { StorageType } from 'src/file/storage/storage-type.enum';
 
 export enum ConfigProperties {
   TypeOrmModuleOptions = 'TypeOrmModuleOptions',
@@ -8,11 +9,6 @@ export enum ConfigProperties {
   UploadFileOptions = 'UploadFileOptions',
   MulterOptions = 'MulterOptions',
   StorageOptions = 'StorageOptions',
-}
-
-export enum StorageType {
-  S3 = 'S3',
-  Local = 'local',
 }
 
 export type StorageOptions = {
