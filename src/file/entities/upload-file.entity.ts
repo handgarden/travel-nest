@@ -11,5 +11,5 @@ export class UploadFile {
 
   @ManyToOne(() => Member)
   @JoinColumn()
-  creator: Member;
+  creator: Promise<Member>;
 }

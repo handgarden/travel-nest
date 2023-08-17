@@ -43,7 +43,8 @@ export class FileController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.fileService.remove(+id);
+  @Authorization()
+  remove(@JwtMember() member: JwtMemberDto, @Param('id') id: string) {
+    return this.fileService.remove(member.id, id);
   }
 }

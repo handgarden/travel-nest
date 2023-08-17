@@ -31,7 +31,7 @@ export class FileService {
       const uplaodFile = new UploadFile();
       uplaodFile.storeFileName = f.filename;
       uplaodFile.uploadFileName = f.originalname || f.filename;
-      uplaodFile.creator = member;
+      uplaodFile.creator = Promise.resolve(member);
       return uplaodFile;
     });
 
@@ -49,8 +49,35 @@ export class FileService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} file`;
+  async remove(memberId: number, id: string) {
+    const files = await this.fileRepository.find({
+      where: { storeFileName: id },
+      relations: { creator: true },
+    });
+
+    if (files.length < 1) {
+      return true;
+    }
+
+    const file = files[0];
+    const member = await file.creator;
+
+    if (memberId !== member.id) {
+      throw new ForbiddenException();
+    }
+
+    this.checkAuth(member);
+
+    await this.fileRepository.remove(file);
+
+    try {
+      const path = await this.getFilePath(id);
+      await fs.promises.rm(path);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      return true;
+    }
   }
 
   private checkAuth(member: Member) {
