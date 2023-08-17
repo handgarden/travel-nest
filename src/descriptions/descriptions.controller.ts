@@ -37,7 +37,7 @@ export class DescriptionsController {
       throw new MaxItemCountExceededError();
     }
 
-    return this.descriptionsService.create(member.id, createDescriptionDto);
+    return this.descriptionsService.create(member, createDescriptionDto);
   }
 
   @Get()
