@@ -41,6 +41,7 @@ lerna-debug.log*
 
 #sqlite
 *.db
+*.db-journal
 
 # local filestore
 /filestore/*
