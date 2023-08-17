@@ -88,7 +88,7 @@ export class DestinationsService {
       .select('destination.id', 'id')
       .addSelect('destination.title', 'title')
       .addSelect('destination.address', 'address')
-      .addSelect('destination.category', 'categoy')
+      .addSelect('destination.category', 'category')
       .addSelect('destination.createdAt', 'createdAt')
       .addSelect('destination.updatedAt', 'updatedAt')
       .addSelect('creator.nickname', 'creatorNickname')
