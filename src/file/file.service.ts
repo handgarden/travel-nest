@@ -41,6 +41,7 @@ export class FileService {
 
     try {
       await qr.manager.save(uploadFiles);
+      await qr.commitTransaction();
       return uploadFiles.map((u) => u.storeFileName);
     } catch (err) {
       await qr.rollbackTransaction();
