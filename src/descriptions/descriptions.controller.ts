@@ -54,8 +54,12 @@ export class DescriptionsController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.descriptionsService.remove(+id);
+  @Authorization()
+  remove(
+    @JwtMember() member: JwtMemberDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.descriptionsService.remove(member.id, id);
   }
 
   private validateContent(

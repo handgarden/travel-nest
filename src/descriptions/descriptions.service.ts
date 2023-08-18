@@ -16,6 +16,7 @@ import { ResourceNotFoundException } from 'src/exception/resource-not-found.exce
 import { Role } from 'src/member/enum/Role';
 import { TransactionService } from 'src/transaction/transaction.service';
 import { FileService } from 'src/file/file.service';
+import { DefaultResponseMessage } from 'src/common/basic-response.enum';
 
 @Injectable()
 export class DescriptionsService {
@@ -190,8 +191,42 @@ export class DescriptionsService {
     );
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} description`;
+  async remove(memberId: number, id: number) {
+    const descriptions = await this.descriptionRepository.find({
+      where: { id },
+      relations: {
+        creator: true,
+      },
+    });
+
+    if (descriptions.length < 1) {
+      return DefaultResponseMessage.SUCCESS;
+    }
+    const description = descriptions[0];
+
+    this.authorize(await description.creator, memberId);
+
+    const images = await this.imageRepository.find({
+      where: { description: { id } },
+      relations: {
+        uploadFile: true,
+      },
+    });
+
+    const storeFileNames = await Promise.all(
+      images.map(async (i) => (await i.uploadFile).storeFileName),
+    );
+
+    const cb = async (em: EntityManager) => {
+      await em.remove(images);
+      await em.remove(description);
+    };
+
+    await this.transactionService.transaction(cb);
+
+    storeFileNames.forEach((s) => this.fileService.remove(memberId, s));
+
+    return DefaultResponseMessage.SUCCESS;
   }
 
   private createDescriptionImage(

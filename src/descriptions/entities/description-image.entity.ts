@@ -14,7 +14,7 @@ export class DescriptionImage {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @OneToOne(() => UploadFile, { cascade: ['remove'] })
+  @OneToOne(() => UploadFile)
   @JoinColumn()
   uploadFile: Promise<UploadFile>;
 
