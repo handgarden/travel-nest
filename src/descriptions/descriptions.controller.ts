@@ -9,7 +9,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { DescriptionsService } from './descriptions.service';
-import { CreateDescriptionRequest } from './dto/create-description.dto';
+import { CreateDescriptionRequest } from './dto/create-description-request.dto';
 import { UpdateDescriptionRequest } from './dto/update-description-request.dto';
 import { EmptyContentException } from './exception/empty-content.exception';
 import { MaxItemCountExceededError } from './exception/max-item-count-exceeded-exception';
@@ -65,14 +65,22 @@ export class DescriptionsController {
   private validateContent(
     descriptionDto: CreateDescriptionRequest | UpdateDescriptionRequest,
   ) {
-    console.log(descriptionDto);
-    if (
-      descriptionDto.storeFileNames.length < 1 &&
-      descriptionDto.content.length < 20
-    ) {
+    //내용이 없는 경우
+    if (!descriptionDto.content && !descriptionDto.storeFileNames) {
       throw new EmptyContentException();
     }
 
+    //이미지가 없는데 내용이 20자 이하인 경우
+    if (
+      !descriptionDto.storeFileNames ||
+      descriptionDto.storeFileNames.length < 1
+    ) {
+      if (descriptionDto.content.length < 20) {
+        throw new EmptyContentException();
+      }
+    }
+
+    //이미지가 있는데 5개를 초과한 경우
     if (descriptionDto.storeFileNames.length > 5) {
       throw new MaxItemCountExceededError();
     }

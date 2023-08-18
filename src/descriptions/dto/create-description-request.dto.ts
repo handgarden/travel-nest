@@ -5,9 +5,7 @@ export class CreateDescriptionRequest {
   @IsNumber()
   destinationId: number;
 
-  @IsNotEmpty()
   content: string;
 
-  @IsNotEmpty()
   storeFileNames: string[];
 }

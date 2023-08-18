@@ -1,11 +1,11 @@
 import { Pageable } from 'src/common/pageable.dto';
 import { UploadFile } from './../file/entities/upload-file.entity';
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { CreateDescriptionRequest } from './dto/create-description.dto';
+import { CreateDescriptionRequest } from './dto/create-description-request.dto';
 import { UpdateDescriptionRequest } from './dto/update-description-request.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Destination } from 'src/destinations/entities/destination.entity';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Description } from './entities/description.entity';
 import { DescriptionImage } from './entities/description-image.entity';
 import { Member } from 'src/member/entities/member.entity';
@@ -21,15 +21,10 @@ import { DefaultResponseMessage } from 'src/common/basic-response.enum';
 @Injectable()
 export class DescriptionsService {
   constructor(
-    // @InjectRepository(Destination)
-    // private destinationRepository: Repository<Destination>,
     @InjectRepository(Description)
     private descriptionRepository: Repository<Description>,
     @InjectRepository(DescriptionImage)
     private imageRepository: Repository<DescriptionImage>,
-    // @InjectRepository(Member)
-    // private memberRepository: Repository<Member>,
-    private dataSource: DataSource,
     private transactionService: TransactionService,
     private fileService: FileService,
   ) {}
