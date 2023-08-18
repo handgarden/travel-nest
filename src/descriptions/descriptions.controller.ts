@@ -6,6 +6,8 @@ import {
   Patch,
   Param,
   Delete,
+  ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { DescriptionsService } from './descriptions.service';
 import { CreateDescriptionRequest } from './dto/create-description.dto';
@@ -15,6 +17,8 @@ import { MaxItemCountExceededError } from './exception/max-item-count-exceeded-e
 import { Authorization } from 'src/auth/decorator/authorization.decorator';
 import { JwtMember } from 'src/auth/decorator/jwt-member.decorator';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
+import { PageRequest } from 'src/common/decorator/pageRequest.decorator';
+import { Pageable } from 'src/common/pageable.dto';
 
 @Controller('descriptions')
 export class DescriptionsController {
@@ -41,8 +45,11 @@ export class DescriptionsController {
   }
 
   @Get()
-  findAll() {
-    return this.descriptionsService.findAll();
+  findAll(
+    @Query('destination', ParseIntPipe) destinationId: number,
+    @PageRequest() pageable: Pageable,
+  ) {
+    return this.descriptionsService.findAll(destinationId, pageable);
   }
 
   @Get(':id')
