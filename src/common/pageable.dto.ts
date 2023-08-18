@@ -14,4 +14,12 @@ export class Pageable {
     this.page = isNaN(parsePage) ? 0 : parsePage;
     this.size = isNaN(parseSize) ? 0 : parseSize;
   }
+
+  getSkip() {
+    return this.page * this.size;
+  }
+
+  getTake() {
+    return this.size;
+  }
 }
