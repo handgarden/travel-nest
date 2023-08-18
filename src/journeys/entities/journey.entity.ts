@@ -19,6 +19,6 @@ export class Journey {
   @Column()
   title: string;
 
-  @Column({ type: 'text' })
-  content: string;
+  @Column({ type: 'text', name: 'content' })
+  review: string;
 }

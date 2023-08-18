@@ -30,8 +30,12 @@ export class JourneysController {
   }
 
   @Post()
-  create(@Body() createJourneyDto: CreateJourneyDto) {
-    return this.journeysService.create(createJourneyDto);
+  @Authorization()
+  create(
+    @JwtMember() member: JwtMemberDto,
+    @Body() createJourneyDto: CreateJourneyDto,
+  ) {
+    return this.journeysService.create(member, createJourneyDto);
   }
 
   @Get()

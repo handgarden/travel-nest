@@ -1,10 +1,10 @@
 import { Description } from 'src/descriptions/entities/description.entity';
 import { Journey } from './journey.entity';
-import { Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class JourneyContent {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn()
   id: number;
 
   @ManyToOne(() => Journey)
