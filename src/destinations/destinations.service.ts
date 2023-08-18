@@ -101,7 +101,8 @@ export class DestinationsService {
       .addSelect('creator.nickname', 'creatorNickname')
       .innerJoin('destination.creator', 'creator')
       .take(pageable.size)
-      .skip(pageable.size * pageable.page);
+      .skip(pageable.size * pageable.page)
+      .orderBy('id', 'DESC');
 
     const result: DestinationResponse[] = await finalQuery.getRawMany();
 
