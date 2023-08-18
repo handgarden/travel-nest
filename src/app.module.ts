@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { DestinationsModule } from './destinations/destinations.module';
 import { DescriptionsModule } from './descriptions/descriptions.module';
 import { FileModule } from './file/file.module';
+import { TransactionModule } from './transaction/transaction.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { FileModule } from './file/file.module';
     DestinationsModule,
     DescriptionsModule,
     FileModule,
+    TransactionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

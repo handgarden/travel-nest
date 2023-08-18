@@ -5,10 +5,12 @@ import { DescriptionsController } from './descriptions.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DescriptionImage } from './entities/description-image.entity';
 import { Destination } from 'src/destinations/entities/destination.entity';
+import { FileModule } from 'src/file/file.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Description, DescriptionImage, Destination]),
+    FileModule,
   ],
   controllers: [DescriptionsController],
   providers: [DescriptionsService],

@@ -1,17 +1,21 @@
 import { Pageable } from 'src/common/pageable.dto';
 import { UploadFile } from './../file/entities/upload-file.entity';
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateDescriptionRequest } from './dto/create-description.dto';
-import { UpdateDescriptionDto } from './dto/update-description.dto';
+import { UpdateDescriptionRequest } from './dto/update-description-request.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Destination } from 'src/destinations/entities/destination.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Description } from './entities/description.entity';
 import { DescriptionImage } from './entities/description-image.entity';
 import { Member } from 'src/member/entities/member.entity';
 import { DescriptionResponse } from './dto/description-response.dto';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
 import { PageResponse } from 'src/common/page-response.dto';
+import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
+import { Role } from 'src/member/enum/Role';
+import { TransactionService } from 'src/transaction/transaction.service';
+import { FileService } from 'src/file/file.service';
 
 @Injectable()
 export class DescriptionsService {
@@ -25,6 +29,8 @@ export class DescriptionsService {
     // @InjectRepository(Member)
     // private memberRepository: Repository<Member>,
     private dataSource: DataSource,
+    private transactionService: TransactionService,
+    private fileService: FileService,
   ) {}
 
   async create(
@@ -37,18 +43,13 @@ export class DescriptionsService {
     const member = new Member();
     member.id = memberDto.id;
 
-    const qr = this.dataSource.createQueryRunner();
-
     const description = new Description();
     description.destination = Promise.resolve(destination);
     description.creator = Promise.resolve(member);
     description.content = createDescriptionDto.content;
 
-    qr.startTransaction();
-    qr.connect();
-
-    try {
-      const pDescription = await qr.manager.save(description);
+    const cb = async (em: EntityManager) => {
+      const pDescription = await em.save(description);
 
       const descriptionImages = this.createDescriptionImage(
         createDescriptionDto.storeFileNames,
@@ -56,8 +57,7 @@ export class DescriptionsService {
         destination,
       );
 
-      await qr.manager.save(descriptionImages);
-      qr.commitTransaction();
+      await em.save(descriptionImages);
 
       const response = await this.convertToResponse(
         pDescription,
@@ -66,30 +66,9 @@ export class DescriptionsService {
       );
 
       return response;
-    } catch (err) {
-      qr.rollbackTransaction();
-    } finally {
-      qr.release();
-    }
-  }
+    };
 
-  private async convertToResponse(
-    pDescription: Description,
-    images: string[],
-    memberDto?: JwtMemberDto,
-  ) {
-    const response = new DescriptionResponse();
-    response.id = pDescription.id;
-    response.content = pDescription.content;
-    response.createdAt = pDescription.createdAt;
-    response.updatedAt = pDescription.updatedAt;
-    response.images = images;
-    if (memberDto) {
-      response.creatorNickname = memberDto.nickname;
-    } else {
-      response.creatorNickname = (await pDescription.creator).nickname;
-    }
-    return response;
+    return this.transactionService.transaction(cb);
   }
 
   async findAll(destinationId: number, pageable: Pageable) {
@@ -141,12 +120,74 @@ export class DescriptionsService {
     return new PageResponse(responses, total);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} description`;
-  }
+  async update(
+    memberId: number,
+    id: number,
+    updateDescriptionDto: UpdateDescriptionRequest,
+  ) {
+    const result = await this.descriptionRepository.find({
+      where: { id },
+      relations: { creator: true, destination: true },
+    });
 
-  update(id: number, updateDescriptionDto: UpdateDescriptionDto) {
-    return `This action updates a #${id} description`;
+    if (result.length < 1) {
+      throw new ResourceNotFoundException();
+    }
+
+    const description = result[0];
+
+    const creator = await description.creator;
+
+    this.authorize(creator, memberId);
+
+    const prevImages = await this.imageRepository.find({
+      where: { description: { id: id } },
+      relations: { uploadFile: true },
+    });
+
+    const destination = new Destination();
+    destination.id = id;
+
+    const newImages = this.createDescriptionImage(
+      updateDescriptionDto.storeFileNames,
+      description,
+      destination,
+    );
+
+    const removeImages = (
+      await Promise.all(
+        prevImages.map(async (i) => {
+          const storeFileName = (await i.uploadFile).storeFileName;
+          if (!updateDescriptionDto.storeFileNames.includes(storeFileName)) {
+            return i;
+          }
+        }),
+      )
+    ).filter(Boolean);
+
+    const cb = async (em: EntityManager) => {
+      await em.update(Description, id, {
+        content: updateDescriptionDto.content,
+      });
+      description.content = updateDescriptionDto.content;
+
+      await em.remove(removeImages);
+
+      await em.upsert(DescriptionImage, newImages, [
+        'uploadFile.storeFileName',
+      ]);
+    };
+
+    await this.transactionService.transaction(cb);
+
+    removeImages.forEach(async (i) =>
+      this.fileService.remove(memberId, (await i.uploadFile).storeFileName),
+    );
+
+    return this.convertToResponse(
+      description,
+      updateDescriptionDto.storeFileNames,
+    );
   }
 
   remove(id: number) {
@@ -158,14 +199,43 @@ export class DescriptionsService {
     description: Description,
     destination: Destination,
   ) {
-    return storeFileNames.map((i) => {
+    return storeFileNames.map((s) => {
       const image = new DescriptionImage();
       image.description = Promise.resolve(description);
       image.destination = Promise.resolve(destination);
       const uploadFile = new UploadFile();
-      uploadFile.storeFileName = i;
+      uploadFile.storeFileName = s;
       image.uploadFile = Promise.resolve(uploadFile);
       return image;
     });
+  }
+
+  private authorize(creator: Member, memberId: number) {
+    if (creator.id !== memberId) {
+      throw new ForbiddenException();
+    }
+
+    if (creator.role === Role.BANNED) {
+      throw new ForbiddenException();
+    }
+  }
+
+  private async convertToResponse(
+    pDescription: Description,
+    images: string[],
+    memberDto?: JwtMemberDto,
+  ) {
+    const response = new DescriptionResponse();
+    response.id = pDescription.id;
+    response.content = pDescription.content;
+    response.createdAt = pDescription.createdAt;
+    response.updatedAt = pDescription.updatedAt;
+    response.images = images;
+    if (memberDto) {
+      response.creatorNickname = memberDto.nickname;
+    } else {
+      response.creatorNickname = (await pDescription.creator).nickname;
+    }
+    return response;
   }
 }

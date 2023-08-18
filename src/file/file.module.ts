@@ -32,5 +32,6 @@ import { Member } from 'src/member/entities/member.entity';
       inject: [ConfigService],
     },
   ],
+  exports: [FileService],
 })
 export class FileModule {}

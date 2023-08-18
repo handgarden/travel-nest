@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   ParseIntPipe,
@@ -11,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { DescriptionsService } from './descriptions.service';
 import { CreateDescriptionRequest } from './dto/create-description.dto';
-import { UpdateDescriptionDto } from './dto/update-description.dto';
+import { UpdateDescriptionRequest } from './dto/update-description-request.dto';
 import { EmptyContentException } from './exception/empty-content.exception';
 import { MaxItemCountExceededError } from './exception/max-item-count-exceeded-exception';
 import { Authorization } from 'src/auth/decorator/authorization.decorator';
@@ -30,16 +29,7 @@ export class DescriptionsController {
     @JwtMember() member: JwtMemberDto,
     @Body() createDescriptionDto: CreateDescriptionRequest,
   ) {
-    if (
-      createDescriptionDto.storeFileNames.length < 1 &&
-      createDescriptionDto.content.length < 20
-    ) {
-      throw new EmptyContentException();
-    }
-
-    if (createDescriptionDto.storeFileNames.length > 5) {
-      throw new MaxItemCountExceededError();
-    }
+    this.validateContent(createDescriptionDto);
 
     return this.descriptionsService.create(member, createDescriptionDto);
   }
@@ -52,21 +42,35 @@ export class DescriptionsController {
     return this.descriptionsService.findAll(destinationId, pageable);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.descriptionsService.findOne(+id);
-  }
-
-  @Patch(':id')
+  @Post(':id')
+  @Authorization()
   update(
-    @Param('id') id: string,
-    @Body() updateDescriptionDto: UpdateDescriptionDto,
+    @JwtMember() member: JwtMemberDto,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateDescriptionDto: UpdateDescriptionRequest,
   ) {
-    return this.descriptionsService.update(+id, updateDescriptionDto);
+    this.validateContent(updateDescriptionDto);
+    return this.descriptionsService.update(member.id, id, updateDescriptionDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.descriptionsService.remove(+id);
+  }
+
+  private validateContent(
+    descriptionDto: CreateDescriptionRequest | UpdateDescriptionRequest,
+  ) {
+    console.log(descriptionDto);
+    if (
+      descriptionDto.storeFileNames.length < 1 &&
+      descriptionDto.content.length < 20
+    ) {
+      throw new EmptyContentException();
+    }
+
+    if (descriptionDto.storeFileNames.length > 5) {
+      throw new MaxItemCountExceededError();
+    }
   }
 }
