@@ -15,12 +15,13 @@ import { DuplicateDestinationException } from './exception/duplicate-destination
 import { PageResponse } from 'src/common/page-response.dto';
 import { DestinationResponse } from './dto/destination-response.dto';
 import { DestinationQuery } from './dto/destination-query.dto';
-import { Category } from './category.enum';
 import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
 import { DefaultResponseMessage } from 'src/common/basic-response.enum';
 import { QueryNotAffectedException } from 'src/exception/query-not-affected.exception';
 import { DescriptionImage } from 'src/descriptions/entities/description-image.entity';
+import { Description } from 'src/descriptions/entities/description.entity';
+import { RestrictedDestinationModificationException } from './exception/restricted-destination-modification.exception';
 
 @Injectable()
 export class DestinationsService {
@@ -29,6 +30,8 @@ export class DestinationsService {
     @InjectRepository(Member) private memberRepository: Repository<Member>,
     @InjectRepository(DescriptionImage)
     private imageRepository: Repository<DescriptionImage>,
+    @InjectRepository(Description)
+    private descriptionRepository: Repository<Description>,
   ) {}
 
   async create(
@@ -148,6 +151,8 @@ export class DestinationsService {
 
     this.checkIsBannedMember(creator);
 
+    await this.checkIsModifiable(id);
+
     this.changeToRealUpdateDto(updateDestinationDto, destination);
 
     if (Object.getOwnPropertyNames(updateDestinationDto).length < 1) {
@@ -192,6 +197,8 @@ export class DestinationsService {
     this.validateAuthorization(requestMember, creator);
     this.checkIsBannedMember(creator);
 
+    await this.checkIsModifiable(id);
+
     this.repository.delete({ id });
   }
 
@@ -226,18 +233,14 @@ export class DestinationsService {
     }
   }
 
-  private createCategoryQuery(categories: Category[]) {
-    console.log(categories);
-    return new Brackets((qb) => {
-      categories.forEach((c, i) => {
-        if (i === 0) {
-          qb = qb.where('destination.category = :category', { category: c });
-        } else {
-          qb = qb.orWhere('destination.category = :category', { category: c });
-        }
-        console.log(qb);
-      });
+  private async checkIsModifiable(id: number) {
+    const descriptionCount = await this.descriptionRepository.count({
+      where: { destination: { id } },
     });
+
+    if (descriptionCount > 0) {
+      throw new RestrictedDestinationModificationException();
+    }
   }
 
   private createStringQuery(query: string) {
