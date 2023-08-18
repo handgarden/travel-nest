@@ -5,13 +5,14 @@ import { Injectable } from '@nestjs/common';
 export class TransactionService {
   constructor(private dataSource: DataSource) {}
 
-  async transaction(cb: (em: EntityManager) => Promise<void>) {
+  async transaction<T>(cb: (em: EntityManager) => Promise<T>) {
     const qr = this.dataSource.createQueryRunner();
     qr.connect();
     qr.startTransaction();
     try {
-      await cb(qr.manager);
+      const result = await cb(qr.manager);
       qr.commitTransaction();
+      return result;
     } catch (err) {
       qr.rollbackTransaction();
       throw err;
