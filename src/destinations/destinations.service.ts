@@ -17,7 +17,7 @@ import { DestinationQuery } from './dto/destination-query.dto';
 import { Category } from './category.enum';
 import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
-import { BasicResponseMessage } from 'src/common/basic-response.enum';
+import { DefaultResponseMessage } from 'src/common/basic-response.enum';
 import { QueryNotAffectedException } from 'src/exception/query-not-affected.exception';
 
 @Injectable()
@@ -143,7 +143,7 @@ export class DestinationsService {
     this.changeToRealUpdateDto(updateDestinationDto, destination);
 
     if (Object.getOwnPropertyNames(updateDestinationDto).length < 1) {
-      return BasicResponseMessage.SUCCESS;
+      return DefaultResponseMessage.SUCCESS;
     }
 
     try {
@@ -153,7 +153,7 @@ export class DestinationsService {
         throw new QueryNotAffectedException();
       }
 
-      return BasicResponseMessage.SUCCESS;
+      return DefaultResponseMessage.SUCCESS;
     } catch (err) {
       if (err instanceof QueryFailedError) {
         const message = err.message;
@@ -176,7 +176,7 @@ export class DestinationsService {
     });
 
     if (destinations.length < 1) {
-      return BasicResponseMessage.SUCCESS;
+      return DefaultResponseMessage.SUCCESS;
     }
 
     const destination = destinations[0];

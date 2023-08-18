@@ -1,3 +1,3 @@
-export enum BasicResponseMessage {
+export enum DefaultResponseMessage {
   SUCCESS = 'success',
 }

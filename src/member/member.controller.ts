@@ -11,7 +11,7 @@ import { Authorization } from 'src/auth/decorator/authorization.decorator';
 import { JwtMember } from 'src/auth/decorator/jwt-member.decorator';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
 import { UpdatePasswordRequest } from './dto/update-password-request.dto';
-import { BasicResponseMessage } from 'src/common/basic-response.enum';
+import { DefaultResponseMessage } from 'src/common/basic-response.enum';
 import { UpdateNicknameRequest } from './dto/update-nickname-request.dto';
 
 @Authorization()
@@ -31,7 +31,7 @@ export class MemberController {
     @Body() updateNicknameDto: UpdateNicknameRequest,
   ) {
     if (member.nickname === updateNicknameDto.nickname) {
-      return BasicResponseMessage.SUCCESS;
+      return DefaultResponseMessage.SUCCESS;
     }
 
     await this.memberService.updateNickname(
@@ -39,7 +39,7 @@ export class MemberController {
       updateNicknameDto.nickname,
     );
 
-    return BasicResponseMessage.SUCCESS;
+    return DefaultResponseMessage.SUCCESS;
   }
 
   @Post('password')
@@ -50,6 +50,6 @@ export class MemberController {
   ) {
     await this.memberService.updatePassword(member.id, updatePasswordDto);
 
-    return BasicResponseMessage.SUCCESS;
+    return DefaultResponseMessage.SUCCESS;
   }
 }

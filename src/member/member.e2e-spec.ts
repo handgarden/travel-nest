@@ -14,7 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Role } from './enum/Role';
 import * as request from 'supertest';
 import { ResponseTemplateInterceptor } from 'src/response-template.interceptor';
-import { BasicResponseMessage } from 'src/common/basic-response.enum';
+import { DefaultResponseMessage } from 'src/common/basic-response.enum';
 import { UpdateNicknameRequest } from './dto/update-nickname-request.dto';
 
 describe('member', () => {
@@ -99,7 +99,7 @@ describe('member', () => {
     const body = res.body;
     expect(body).toEqual({
       success: true,
-      response: BasicResponseMessage.SUCCESS,
+      response: DefaultResponseMessage.SUCCESS,
       error: null,
     });
 
@@ -123,7 +123,7 @@ describe('member', () => {
     const body = res.body;
     expect(body).toEqual({
       success: true,
-      response: BasicResponseMessage.SUCCESS,
+      response: DefaultResponseMessage.SUCCESS,
       error: null,
     });
   });

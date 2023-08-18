@@ -5,7 +5,7 @@ import { MemberService } from './member.service';
 import { Role } from './enum/Role';
 import { MemberProfile } from './dto/member-profile.dto';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
-import { BasicResponseMessage } from 'src/common/basic-response.enum';
+import { DefaultResponseMessage } from 'src/common/basic-response.enum';
 import { UpdateNicknameRequest } from './dto/update-nickname-request.dto';
 
 describe('MemberController', () => {
@@ -56,7 +56,7 @@ describe('MemberController', () => {
         jwtMemberDto,
         updateNicknameDto,
       );
-      expect(success).toEqual(BasicResponseMessage.SUCCESS);
+      expect(success).toEqual(DefaultResponseMessage.SUCCESS);
       expect(spy).not.toBeCalled();
     });
 
@@ -69,7 +69,7 @@ describe('MemberController', () => {
         jwtMemberDto,
         updateNicknameDto,
       );
-      expect(success).toEqual(BasicResponseMessage.SUCCESS);
+      expect(success).toEqual(DefaultResponseMessage.SUCCESS);
       expect(spy).toBeCalled();
     });
   });
@@ -86,7 +86,7 @@ describe('MemberController', () => {
         jwtMemberDto,
         updatePasswordDto,
       );
-      expect(success).toEqual(BasicResponseMessage.SUCCESS);
+      expect(success).toEqual(DefaultResponseMessage.SUCCESS);
       expect(spy).toBeCalled();
     });
   });
