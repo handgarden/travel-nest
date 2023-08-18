@@ -126,7 +126,7 @@ export class DestinationsService {
       throw new ResourceNotFoundException();
     }
 
-    return DestinationResponse.createResponse(destination[0]);
+    return DestinationResponse.createAsync(destination[0]);
   }
 
   async update(

@@ -25,4 +25,16 @@ export class DescriptionImage {
   @ManyToOne(() => Description)
   @JoinColumn()
   description: Promise<Description>;
+
+  static async create(
+    description: Description,
+    destination: Destination,
+    uploadFile: UploadFile,
+  ) {
+    const image = new DescriptionImage();
+    image.description = Promise.resolve(description);
+    image.destination = Promise.resolve(destination);
+    image.uploadFile = Promise.resolve(uploadFile);
+    return image;
+  }
 }

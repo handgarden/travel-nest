@@ -10,6 +10,7 @@ import { DestinationsModule } from './destinations/destinations.module';
 import { DescriptionsModule } from './descriptions/descriptions.module';
 import { FileModule } from './file/file.module';
 import { TransactionModule } from './transaction/transaction.module';
+import { JourneysModule } from './journeys/journeys.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { TransactionModule } from './transaction/transaction.module';
     DescriptionsModule,
     FileModule,
     TransactionModule,
+    JourneysModule,
   ],
   controllers: [AppController],
   providers: [AppService],

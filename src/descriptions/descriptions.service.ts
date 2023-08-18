@@ -89,23 +89,7 @@ export class DescriptionsService {
 
     const ids = descriptions.map((d) => d.id);
 
-    const images: { storeFileName: string; descriptionId: number }[] =
-      await this.imageRepository
-        .createQueryBuilder('image')
-        .innerJoin('image.description', 'description')
-        .innerJoin('image.uploadFile', 'uploadFile')
-        .select('uploadFile.storeFileName', 'storeFileName')
-        .addSelect('description.id', 'descriptionId')
-        .where('description.id IN (:...ids)', { ids })
-        .orderBy('image.id', 'ASC')
-        .getRawMany();
-
-    const imageMap = new Map<number, string[]>();
-    ids.forEach((i) => imageMap.set(i, []));
-
-    images.forEach((i) => {
-      imageMap.get(i.descriptionId).push(i.storeFileName);
-    });
+    const imageMap = await this.findImagesByDescriptions(ids);
 
     const responses = await Promise.all(
       descriptions.map(
@@ -223,6 +207,37 @@ export class DescriptionsService {
 
     return DefaultResponseMessage.SUCCESS;
   }
+
+  //================================================================================================
+
+  /**
+   * Description ID 배열 넘기면 Map<id, 이미지 이름[]> 반환
+   */
+  async findImagesByDescriptions(
+    ids: number[],
+  ): Promise<Map<number, string[]>> {
+    const images: { storeFileName: string; descriptionId: number }[] =
+      await this.imageRepository
+        .createQueryBuilder('image')
+        .innerJoin('image.description', 'description')
+        .innerJoin('image.uploadFile', 'uploadFile')
+        .select('uploadFile.storeFileName', 'storeFileName')
+        .addSelect('description.id', 'descriptionId')
+        .where('description.id IN (:...ids)', { ids })
+        .orderBy('image.id', 'ASC')
+        .getRawMany();
+
+    const imageMap = new Map<number, string[]>();
+    ids.forEach((i) => imageMap.set(i, []));
+
+    images.forEach((i) => {
+      imageMap.get(i.descriptionId).push(i.storeFileName);
+    });
+
+    return imageMap;
+  }
+
+  //===========================================================================================================
 
   private createDescriptionImage(
     storeFileNames: string[],

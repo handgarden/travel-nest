@@ -14,5 +14,6 @@ import { FileModule } from 'src/file/file.module';
   ],
   controllers: [DescriptionsController],
   providers: [DescriptionsService],
+  exports: [DescriptionsService],
 })
 export class DescriptionsModule {}
