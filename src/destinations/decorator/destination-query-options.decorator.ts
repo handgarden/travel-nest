@@ -4,7 +4,7 @@ import { Pageable } from 'src/common/pageable.dto';
 import { DestinationQuery } from '../dto/destination-query.dto';
 import { Category } from '../category.enum';
 
-export const DestinationQueryOptions = createParamDecorator(
+export const DestinationQueryParams = createParamDecorator(
   (data: any, ctx: ExecutionContext) => {
     const request: Request = ctx.switchToHttp().getRequest();
 

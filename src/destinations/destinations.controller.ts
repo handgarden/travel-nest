@@ -14,8 +14,10 @@ import { UpdateDestinationRequest } from './dto/update-destination-request.dto';
 import { Authorization } from 'src/auth/decorator/authorization.decorator';
 import { JwtMember } from 'src/auth/decorator/jwt-member.decorator';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
-import { DestinationQueryOptions } from './decorator/destination-query-options.decorator';
+import { DestinationQueryParams } from './decorator/destination-query-options.decorator';
 import { DestinationQuery } from './dto/destination-query.dto';
+import { PageRequest } from 'src/common/decorator/pageRequest.decorator';
+import { Pageable } from 'src/common/pageable.dto';
 
 @Controller('destinations')
 export class DestinationsController {
@@ -31,13 +33,21 @@ export class DestinationsController {
   }
 
   @Get()
-  findAll(@DestinationQueryOptions() query: DestinationQuery) {
+  findAll(@DestinationQueryParams() query: DestinationQuery) {
     return this.destinationsService.findAll(query);
   }
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.destinationsService.findOne(id);
+  }
+
+  @Get(':id/thumbnails')
+  getThumbnails(
+    @Param('id', ParseIntPipe) id: number,
+    @PageRequest() pagable: Pageable,
+  ) {
+    return this.destinationsService.findThumbnails(id, pagable);
   }
 
   @Patch(':id')

@@ -1,3 +1,4 @@
+import { Pageable } from './../common/pageable.dto';
 import {
   ForbiddenException,
   Injectable,
@@ -19,12 +20,15 @@ import { ResourceNotFoundException } from 'src/exception/resource-not-found.exce
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
 import { DefaultResponseMessage } from 'src/common/basic-response.enum';
 import { QueryNotAffectedException } from 'src/exception/query-not-affected.exception';
+import { DescriptionImage } from 'src/descriptions/entities/description-image.entity';
 
 @Injectable()
 export class DestinationsService {
   constructor(
     @InjectRepository(Destination) private repository: Repository<Destination>,
     @InjectRepository(Member) private memberRepository: Repository<Member>,
+    @InjectRepository(DescriptionImage)
+    private imageRepository: Repository<DescriptionImage>,
   ) {}
 
   async create(
@@ -59,26 +63,29 @@ export class DestinationsService {
   }
 
   async findAll(destinationQuery: DestinationQuery) {
-    const qb = this.repository.createQueryBuilder('destination');
+    let qb = this.repository.createQueryBuilder('destination');
 
     let needWhere = true;
     if (destinationQuery.category.length > 0) {
-      const query = this.createCategoryQuery(destinationQuery.category);
       if (needWhere) {
-        qb.where(query);
+        qb = qb.where('category IN (:...category)', {
+          category: destinationQuery.category,
+        });
         needWhere = false;
       } else {
-        qb.andWhere(query);
+        qb = qb.andWhere('category IN (:...category)', {
+          category: destinationQuery.category,
+        });
       }
     }
 
     if (destinationQuery.query) {
       const query = this.createStringQuery(destinationQuery.query);
       if (needWhere) {
-        qb.where(query);
+        qb = qb.where(query);
         needWhere = false;
       } else {
-        qb.andWhere(query);
+        qb = qb.andWhere(query);
       }
     }
 
@@ -187,6 +194,23 @@ export class DestinationsService {
     this.repository.delete({ id });
   }
 
+  async findThumbnails(id: number, pageable: Pageable) {
+    const [images, total] = await this.imageRepository.findAndCount({
+      where: { destination: { id } },
+      take: pageable.getTake(),
+      skip: pageable.getSkip(),
+      relations: {
+        uploadFile: true,
+      },
+    });
+
+    const storeFileNames = await Promise.all(
+      images.map(async (i) => (await i.uploadFile).storeFileName),
+    );
+
+    return new PageResponse(storeFileNames, total);
+  }
+
   //==============================================================================
 
   private checkIsBannedMember(member: Member) {
@@ -202,13 +226,15 @@ export class DestinationsService {
   }
 
   private createCategoryQuery(categories: Category[]) {
+    console.log(categories);
     return new Brackets((qb) => {
       categories.forEach((c, i) => {
         if (i === 0) {
-          qb.where('destination.category = :category', { category: c });
+          qb = qb.where('destination.category = :category', { category: c });
         } else {
-          qb.orWhere('destination.category = :category', { category: c });
+          qb = qb.orWhere('destination.category = :category', { category: c });
         }
+        console.log(qb);
       });
     });
   }
