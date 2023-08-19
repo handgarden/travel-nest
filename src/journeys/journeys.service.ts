@@ -210,30 +210,69 @@ export class JourneysService {
 
     this.checkAuthorization(member, memberId);
 
-    const cb = async (em: EntityManager) => {
-      await em.update(Journey, id, {
-        title: updateJourneyDto.title,
-        review: updateJourneyDto.review,
-      });
+    const prevContents: { id: number }[] = await this.contentRepository
+      .createQueryBuilder('content')
+      .select('description.id', 'id')
+      .where({ journeyId: id })
+      .innerJoin('content.description', 'description')
+      .orderBy('content.id')
+      .getRawMany();
 
-      await em.delete(JourneyContent, { journeyId: id });
+    const updateOption: { title?: string; review?: string } = {};
+    let isUpdate = false;
+    if (updateJourneyDto.title !== journey.title) {
+      updateOption.title = updateJourneyDto.title;
+      isUpdate = true;
+    }
+    if (updateJourneyDto.review !== journey.review) {
+      updateOption.review = updateJourneyDto.review;
+      isUpdate = true;
+    }
 
-      const contents = updateJourneyDto.contents.map((c) => {
-        const description = new Description();
-        description.id = c;
+    let isContentUpdate = false;
+    if (prevContents.length !== updateJourneyDto.contents.length) {
+      isContentUpdate = true;
+    }
 
-        const content = new JourneyContent();
-        content.journey = Promise.resolve(journey);
-        content.description = Promise.resolve(description);
-        content.journeyId = journey.id;
+    if (!isContentUpdate) {
+      for (let i = 0; i < prevContents.length; i++) {
+        if (prevContents[i].id !== updateJourneyDto.contents[i]) {
+          isContentUpdate = true;
+          break;
+        }
+      }
+    }
 
-        return content;
-      });
+    if (isUpdate || isContentUpdate) {
+      const cb = async (em: EntityManager) => {
+        if (isUpdate) {
+          await em.update(Journey, id, {
+            title: updateJourneyDto.title,
+            review: updateJourneyDto.review,
+          });
+        }
 
-      await em.save(contents);
-    };
+        if (isContentUpdate) {
+          await em.delete(JourneyContent, { journeyId: id });
 
-    await this.transactionService.transaction(cb);
+          const contents = updateJourneyDto.contents.map((c) => {
+            const description = new Description();
+            description.id = c;
+
+            const content = new JourneyContent();
+            content.journey = Promise.resolve(journey);
+            content.description = Promise.resolve(description);
+            content.journeyId = journey.id;
+
+            return content;
+          });
+
+          await em.save(contents);
+        }
+      };
+
+      await this.transactionService.transaction(cb);
+    }
 
     return DefaultResponseMessage.SUCCESS;
   }
