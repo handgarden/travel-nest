@@ -1,3 +1,4 @@
+import { DefaultEntity } from 'src/common/entity/default.entity';
 import { Member } from 'src/member/entities/member.entity';
 import {
   Column,
@@ -8,13 +9,13 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class Journey {
+export class Journey extends DefaultEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @ManyToOne(() => Member)
   @JoinColumn()
-  creator: Member;
+  creator: Promise<Member>;
 
   @Column()
   title: string;

@@ -1,6 +1,12 @@
 import { Description } from 'src/descriptions/entities/description.entity';
 import { Journey } from './journey.entity';
-import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
 export class JourneyContent {
@@ -8,8 +14,11 @@ export class JourneyContent {
   id: number;
 
   @ManyToOne(() => Journey)
-  @JoinColumn()
+  @JoinColumn({ name: 'journeyId' })
   journey: Promise<Journey>;
+
+  @Column({ nullable: false })
+  journeyId: number;
 
   @ManyToOne(() => Description)
   @JoinColumn()

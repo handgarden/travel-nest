@@ -39,8 +39,8 @@ export class JourneysController {
   }
 
   @Get()
-  findAll() {
-    return this.journeysService.findAll();
+  findAll(@PageRequest() pageable: Pageable) {
+    return this.journeysService.findAll(pageable);
   }
 
   @Get(':id')

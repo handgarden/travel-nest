@@ -10,10 +10,6 @@ export class DestinationResponse {
   createdAt: Date;
   updatedAt: Date;
 
-  private constructor() {
-    return this;
-  }
-
   static async createAsync(destination: Destination) {
     const response = new DestinationResponse();
     response.id = destination.id;
