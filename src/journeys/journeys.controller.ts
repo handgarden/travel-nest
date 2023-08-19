@@ -17,6 +17,7 @@ import { PageRequest } from 'src/common/decorator/pageRequest.decorator';
 import { Pageable } from 'src/common/pageable.dto';
 import { JourneysCommentService } from './journeys-comment.service';
 import { CreateCommentRequest } from './dto/create-comment-request.dto';
+import { UpdateCommentRequest } from './dto/update-comment-request.dto';
 
 @Controller('journeys')
 export class JourneysController {
@@ -91,5 +92,15 @@ export class JourneysController {
     @Body() createDto: CreateCommentRequest,
   ) {
     return this.journeysCommentService.create(member, id, createDto);
+  }
+
+  @Post('/comments/:id')
+  @Authorization()
+  updateComment(
+    @JwtMember() member: JwtMemberDto,
+    @Param('id', ParseIntPipe) commentId: number,
+    @Body() updateDto: UpdateCommentRequest,
+  ) {
+    return this.journeysCommentService.update(member.id, commentId, updateDto);
   }
 }

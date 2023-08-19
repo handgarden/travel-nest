@@ -293,7 +293,6 @@ export class JourneysService {
     this.checkAuthorization(member, memberId);
 
     const cb = async (em: EntityManager) => {
-      console.log({ journey: { id: id } });
       await em.delete(JourneyContent, { journeyId: id });
 
       await em.delete(Journey, id);

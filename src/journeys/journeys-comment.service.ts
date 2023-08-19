@@ -1,5 +1,5 @@
 import { Pageable } from 'src/common/pageable.dto';
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateCommentRequest } from './dto/create-comment-request.dto';
 import { JourneyComment } from './entities/journey-comment';
 import { Member } from 'src/member/entities/member.entity';
@@ -9,6 +9,9 @@ import { Repository } from 'typeorm';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
 import { JourneyCommentResponse } from './dto/journey-comment-response.dto';
 import { PageResponse } from 'src/common/page-response.dto';
+import { UpdateCommentRequest } from './dto/update-comment-request.dto';
+import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
+import { Role } from 'src/member/enum/Role';
 
 @Injectable()
 export class JourneysCommentService {
@@ -47,11 +50,46 @@ export class JourneysCommentService {
     const responses = await Promise.all(
       comments.map(async (c) => {
         const nickname = (await c.creator).nickname;
-        console.log(c, nickname);
         return JourneyCommentResponse.create(nickname, c);
       }),
     );
 
     return new PageResponse(responses, total);
+  }
+
+  async update(memberId: number, id: number, dto: UpdateCommentRequest) {
+    const comments = await this.commentRepository.find({
+      where: { id },
+      relations: {
+        creator: true,
+      },
+    });
+
+    if (comments.length < 1) {
+      throw new ResourceNotFoundException();
+    }
+
+    const comment = comments[0];
+    const creator = await comment.creator;
+    this.checkAuthorization(creator, memberId);
+
+    //조건 확인
+    if (comment.content !== dto.comment) {
+      await this.commentRepository.update(id, {
+        content: dto.comment,
+      });
+      comment.content = dto.comment;
+    }
+    return JourneyCommentResponse.create(creator.nickname, comment);
+  }
+
+  checkAuthorization(member: Member, memberId: number) {
+    if (member.id !== memberId) {
+      throw new ForbiddenException();
+    }
+
+    if (member.role === Role.BANNED) {
+      throw new ForbiddenException();
+    }
   }
 }
