@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   ParseIntPipe,
@@ -45,16 +44,18 @@ export class JourneysController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.journeysService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Post(':id')
+  @Authorization()
   update(
-    @Param('id') id: string,
+    @JwtMember() member: JwtMemberDto,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateJourneyDto: UpdateJourneyRequest,
   ) {
-    return this.journeysService.update(+id, updateJourneyDto);
+    return this.journeysService.update(member.id, id, updateJourneyDto);
   }
 
   @Delete(':id')

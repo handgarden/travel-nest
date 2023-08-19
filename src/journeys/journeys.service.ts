@@ -191,8 +191,51 @@ export class JourneysService {
     return response;
   }
 
-  update(id: number, updateJourneyDto: UpdateJourneyRequest) {
-    return `This action updates a #${id} journey`;
+  async update(
+    memberId: number,
+    id: number,
+    updateJourneyDto: UpdateJourneyRequest,
+  ) {
+    const journeys = await this.journeyRepository.find({
+      where: { id },
+      relations: { creator: true },
+    });
+    if (journeys.length < 1) {
+      throw new ResourceNotFoundException();
+    }
+
+    const journey = journeys[0];
+
+    const member = await journey.creator;
+
+    this.checkAuthorization(member, memberId);
+
+    const cb = async (em: EntityManager) => {
+      await em.update(Journey, id, {
+        title: updateJourneyDto.title,
+        review: updateJourneyDto.review,
+      });
+
+      await em.delete(JourneyContent, { journeyId: id });
+
+      const contents = updateJourneyDto.contents.map((c) => {
+        const description = new Description();
+        description.id = c;
+
+        const content = new JourneyContent();
+        content.journey = Promise.resolve(journey);
+        content.description = Promise.resolve(description);
+        content.journeyId = journey.id;
+
+        return content;
+      });
+
+      await em.save(contents);
+    };
+
+    await this.transactionService.transaction(cb);
+
+    return DefaultResponseMessage.SUCCESS;
   }
 
   async remove(memberId: number, id: number) {

@@ -1,4 +1,20 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateJourneyRequest } from './create-journey-request.dto';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsNotEmpty,
+  Length,
+} from 'class-validator';
 
-export class UpdateJourneyRequest extends PartialType(CreateJourneyRequest) {}
+export class UpdateJourneyRequest {
+  @IsNotEmpty()
+  @Length(1, 30)
+  title: string;
+
+  @IsNotEmpty()
+  @Length(20, 1000)
+  review: string;
+
+  @ArrayMaxSize(5)
+  @ArrayMinSize(1)
+  contents: number[];
+}
