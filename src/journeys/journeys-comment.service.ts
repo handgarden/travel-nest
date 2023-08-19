@@ -12,6 +12,7 @@ import { PageResponse } from 'src/common/page-response.dto';
 import { UpdateCommentRequest } from './dto/update-comment-request.dto';
 import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
 import { Role } from 'src/member/enum/Role';
+import { DefaultResponseMessage } from 'src/common/basic-response.enum';
 
 @Injectable()
 export class JourneysCommentService {
@@ -81,6 +82,27 @@ export class JourneysCommentService {
       comment.content = dto.comment;
     }
     return JourneyCommentResponse.create(creator.nickname, comment);
+  }
+
+  async delete(memberId: number, id: number) {
+    const comments = await this.commentRepository.find({
+      where: { id },
+      relations: {
+        creator: true,
+      },
+    });
+
+    if (comments.length < 1) {
+      return DefaultResponseMessage.SUCCESS;
+    }
+
+    const comment = comments[0];
+    const creator = await comment.creator;
+    this.checkAuthorization(creator, memberId);
+
+    await this.commentRepository.remove(comment);
+
+    return DefaultResponseMessage.SUCCESS;
   }
 
   checkAuthorization(member: Member, memberId: number) {

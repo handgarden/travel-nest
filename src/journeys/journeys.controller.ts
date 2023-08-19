@@ -103,4 +103,13 @@ export class JourneysController {
   ) {
     return this.journeysCommentService.update(member.id, commentId, updateDto);
   }
+
+  @Delete('/comments/:id')
+  @Authorization()
+  deleteComment(
+    @JwtMember() member: JwtMemberDto,
+    @Param('id', ParseIntPipe) commentId: number,
+  ) {
+    return this.journeysCommentService.delete(member.id, commentId);
+  }
 }
