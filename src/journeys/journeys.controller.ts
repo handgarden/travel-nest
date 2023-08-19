@@ -15,10 +15,15 @@ import { JwtMember } from 'src/auth/decorator/jwt-member.decorator';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
 import { PageRequest } from 'src/common/decorator/pageRequest.decorator';
 import { Pageable } from 'src/common/pageable.dto';
+import { JourneysCommentService } from './journeys-comment.service';
+import { CreateCommentRequest } from './dto/create-comment-request.dto';
 
 @Controller('journeys')
 export class JourneysController {
-  constructor(private readonly journeysService: JourneysService) {}
+  constructor(
+    private readonly journeysService: JourneysService,
+    private readonly journeysCommentService: JourneysCommentService,
+  ) {}
 
   @Get('contents')
   @Authorization()
@@ -65,5 +70,26 @@ export class JourneysController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.journeysService.remove(member.id, id);
+  }
+
+  //===============================================
+  //COMMNET
+  //===============================================
+  @Get(':id/comments')
+  getComments(
+    @Param('id', ParseIntPipe) id: number,
+    @PageRequest() pageable: Pageable,
+  ) {
+    return this.journeysCommentService.findAll(id, pageable);
+  }
+
+  @Post(':id/comments')
+  @Authorization()
+  saveComment(
+    @JwtMember() member: JwtMemberDto,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() createDto: CreateCommentRequest,
+  ) {
+    return this.journeysCommentService.create(member, id, createDto);
   }
 }
