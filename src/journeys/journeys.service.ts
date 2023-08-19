@@ -17,6 +17,7 @@ import { JourneyContent } from './entities/journey-content';
 import { TransactionService } from 'src/transaction/transaction.service';
 import { DefaultResponseMessage } from 'src/common/basic-response.enum';
 import { JourneyResponse } from './dto/journey-response.dto';
+import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
 
 @Injectable()
 export class JourneysService {
@@ -146,8 +147,47 @@ export class JourneysService {
     return new PageResponse(responses, total);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} journey`;
+  async findOne(id: number) {
+    //Journey 조회
+    const journeys = await this.journeyRepository.find({
+      where: { id },
+      relations: { creator: true },
+    });
+
+    if (journeys.length < 1) {
+      throw new ResourceNotFoundException();
+    }
+
+    //Journey 컨텐츠 조회를 위해서 id 배열 생성
+    //컨텐츠 조회
+    const contents = await this.contentRepository.find({
+      where: { journey: { id } },
+      relations: {
+        description: {
+          destination: {
+            creator: true,
+          },
+          creator: true,
+        },
+      },
+      order: { id: 'ASC' },
+    });
+
+    //resonsedto로 변경
+    const contentResponses = await this.createJourneyContentResponse(contents);
+
+    //journeyResponse 생성
+    const journey = journeys[0];
+
+    const response = new JourneyResponse();
+    response.id = journey.id;
+    response.title = journey.title;
+    response.review = journey.review;
+    response.creatorNickname = (await journey.creator).nickname;
+    response.createdAt = journey.createdAt;
+    response.updatedAt = journey.updatedAt;
+    response.journeyContents = contentResponses;
+    return response;
   }
 
   update(id: number, updateJourneyDto: UpdateJourneyDto) {
