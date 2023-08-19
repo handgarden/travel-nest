@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { JourneysService } from './journeys.service';
 import { CreateJourneyDto } from './dto/create-journey.dto';
@@ -54,7 +55,11 @@ export class JourneysController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.journeysService.remove(+id);
+  @Authorization()
+  remove(
+    @JwtMember() member: JwtMemberDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.journeysService.remove(member.id, id);
   }
 }

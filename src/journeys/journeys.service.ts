@@ -1,5 +1,5 @@
 import { DescriptionsService } from './../descriptions/descriptions.service';
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateJourneyDto } from './dto/create-journey.dto';
 import { UpdateJourneyDto } from './dto/update-journey.dto';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
@@ -18,6 +18,7 @@ import { TransactionService } from 'src/transaction/transaction.service';
 import { DefaultResponseMessage } from 'src/common/basic-response.enum';
 import { JourneyResponse } from './dto/journey-response.dto';
 import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
+import { Role } from 'src/member/enum/Role';
 
 @Injectable()
 export class JourneysService {
@@ -194,8 +195,43 @@ export class JourneysService {
     return `This action updates a #${id} journey`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} journey`;
+  async remove(memberId: number, id: number) {
+    const journeys = await this.journeyRepository.find({
+      where: { id },
+      relations: { creator: true },
+    });
+
+    if (journeys.length < 1) {
+      return DefaultResponseMessage.SUCCESS;
+    }
+    const journey = journeys[0];
+
+    const member = await journey.creator;
+
+    this.checkAuthorization(member, memberId);
+
+    const cb = async (em: EntityManager) => {
+      console.log({ journey: { id: id } });
+      await em.delete(JourneyContent, { journeyId: id });
+
+      await em.delete(Journey, id);
+    };
+
+    await this.transactionService.transaction(cb);
+
+    return DefaultResponseMessage.SUCCESS;
+  }
+
+  //==========================================================================
+
+  private checkAuthorization(member: Member, memberId: number) {
+    if (member.id !== memberId) {
+      throw new ForbiddenException();
+    }
+
+    if (member.role === Role.BANNED) {
+      throw new ForbiddenException();
+    }
   }
 
   private async createJourneyContentResponse(contents: JourneyContent[]) {
