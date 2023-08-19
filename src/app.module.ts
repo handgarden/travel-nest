@@ -11,6 +11,7 @@ import { DescriptionsModule } from './descriptions/descriptions.module';
 import { FileModule } from './file/file.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { JourneysModule } from './journeys/journeys.module';
+import { RoomModule } from './room/room.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { JourneysModule } from './journeys/journeys.module';
     FileModule,
     TransactionModule,
     JourneysModule,
+    RoomModule,
   ],
   controllers: [AppController],
   providers: [AppService],
