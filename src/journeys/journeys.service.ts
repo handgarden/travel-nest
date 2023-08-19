@@ -1,7 +1,7 @@
 import { DescriptionsService } from './../descriptions/descriptions.service';
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { CreateJourneyDto } from './dto/create-journey.dto';
-import { UpdateJourneyDto } from './dto/update-journey.dto';
+import { CreateJourneyRequest } from './dto/create-journey-request.dto';
+import { UpdateJourneyRequest } from './dto/update-journey-request.dto';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Description } from 'src/descriptions/entities/description.entity';
@@ -61,7 +61,7 @@ export class JourneysService {
     return new PageResponse(response, total);
   }
 
-  async create(member: JwtMemberDto, createJourneyDto: CreateJourneyDto) {
+  async create(member: JwtMemberDto, createJourneyDto: CreateJourneyRequest) {
     const creator = new Member();
     creator.id = member.id;
 
@@ -191,7 +191,7 @@ export class JourneysService {
     return response;
   }
 
-  update(id: number, updateJourneyDto: UpdateJourneyDto) {
+  update(id: number, updateJourneyDto: UpdateJourneyRequest) {
     return `This action updates a #${id} journey`;
   }
 

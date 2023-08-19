@@ -9,8 +9,8 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { JourneysService } from './journeys.service';
-import { CreateJourneyDto } from './dto/create-journey.dto';
-import { UpdateJourneyDto } from './dto/update-journey.dto';
+import { CreateJourneyRequest } from './dto/create-journey-request.dto';
+import { UpdateJourneyRequest } from './dto/update-journey-request.dto';
 import { Authorization } from 'src/auth/decorator/authorization.decorator';
 import { JwtMember } from 'src/auth/decorator/jwt-member.decorator';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
@@ -34,7 +34,7 @@ export class JourneysController {
   @Authorization()
   create(
     @JwtMember() member: JwtMemberDto,
-    @Body() createJourneyDto: CreateJourneyDto,
+    @Body() createJourneyDto: CreateJourneyRequest,
   ) {
     return this.journeysService.create(member, createJourneyDto);
   }
@@ -50,7 +50,10 @@ export class JourneysController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateJourneyDto: UpdateJourneyDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateJourneyDto: UpdateJourneyRequest,
+  ) {
     return this.journeysService.update(+id, updateJourneyDto);
   }
 

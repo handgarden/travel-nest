@@ -5,7 +5,7 @@ import {
   Length,
 } from 'class-validator';
 
-export class CreateJourneyDto {
+export class CreateJourneyRequest {
   @IsNotEmpty()
   title: string;
 
