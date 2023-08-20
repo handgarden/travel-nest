@@ -28,7 +28,7 @@ export class RoomController {
     return this.roomService.create(member, createRoomDto);
   }
 
-  @Get(':id')
+  @Get('/destination/:id')
   findAll(
     @Param('id', ParseIntPipe) destinationId,
     @Query('start', ParseDatePipe) startDate: Date,
@@ -38,10 +38,10 @@ export class RoomController {
     return this.roomService.findAll(destinationId, startDate, endDate);
   }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.roomService.findOne(+id);
-  // }
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.roomService.findOne(id);
+  }
 
   // @Patch(':id')
   // update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
@@ -53,7 +53,15 @@ export class RoomController {
   //   return this.roomService.remove(+id);
   // }
   private validateReservationDate(startDate: Date, endDate: Date) {
-    if (startDate < new Date() || startDate > endDate) {
+    const now = new Date();
+    const startDateStr = `${startDate.getMonth() + 1}-${startDate.getDate()}`;
+    const nowDateStr = `${now.getMonth() + 1}-${now.getDate()}`;
+    const endDateStr = `${endDate.getMonth() + 1}-${endDate.getDate()}`;
+    if (
+      startDateStr < nowDateStr ||
+      endDateStr < nowDateStr ||
+      startDate > endDate
+    ) {
       throw new InvalidReservationDateException();
     }
   }

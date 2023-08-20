@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
@@ -119,8 +120,25 @@ export class RoomService {
     return response;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} room`;
+  async findOne(id: number) {
+    const rooms = await this.roomRepository.find({
+      where: {
+        id,
+      },
+      relations: {
+        destination: true,
+      },
+      take: 1,
+    });
+
+    if (rooms.length < 1) {
+      throw new NotFoundException();
+    }
+
+    const room = rooms[0];
+    const destination = await room.destination;
+
+    return RoomResponse.create(destination, room);
   }
 
   update(id: number, updateRoomDto: UpdateRoomDto) {
