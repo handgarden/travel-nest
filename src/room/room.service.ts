@@ -141,6 +141,8 @@ export class RoomService {
     return RoomResponse.create(destination, room);
   }
 
+  // async reservceRoom()
+
   update(id: number, updateRoomDto: UpdateRoomDto) {
     return `This action updates a #${id} room`;
   }

@@ -12,6 +12,7 @@ import { FileModule } from './file/file.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { JourneysModule } from './journeys/journeys.module';
 import { RoomModule } from './room/room.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { RoomModule } from './room/room.module';
     TransactionModule,
     JourneysModule,
     RoomModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

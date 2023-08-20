@@ -12,8 +12,9 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { Authorization } from 'src/auth/decorator/authorization.decorator';
 import { JwtMember } from 'src/auth/decorator/jwt-member.decorator';
 import { JwtMemberDto } from 'src/auth/dto/jwt-member.dto';
-import { ParseDatePipe } from 'src/common/pipe/pase-date.pipe';
+import { ParseDatePipe } from 'src/common/pipe/parse-date.pipe';
 import { InvalidReservationDateException } from './exception/invalid-reservation-date.exception';
+import { ReserveRoomRequest } from './dto/reserve-room-request.dto';
 
 @Controller('rooms')
 export class RoomController {
@@ -41,6 +42,11 @@ export class RoomController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.roomService.findOne(id);
+  }
+
+  @Post(':id')
+  reserve(@Body() dto: ReserveRoomRequest) {
+    console.log(dto);
   }
 
   // @Patch(':id')

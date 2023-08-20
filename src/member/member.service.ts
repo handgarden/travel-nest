@@ -1,8 +1,9 @@
+import { PaymentService } from './../payment/payment.service';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Member } from './entities/member.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { EntityManager, QueryFailedError, Repository } from 'typeorm';
 import { Role } from './enum/Role';
 import { DuplicateAccountException } from './exception/duplicate-account.exception';
 import { DuplicateNicknameException } from './exception/duplicate-nickname.exception';
@@ -11,11 +12,14 @@ import { UpdatePasswordRequest } from './dto/update-password-request.dto';
 import * as bcrypt from 'bcrypt';
 import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
 import { QueryNotAffectedException } from 'src/exception/query-not-affected.exception';
+import { TransactionService } from 'src/transaction/transaction.service';
 
 @Injectable()
 export class MemberService {
   constructor(
     @InjectRepository(Member) private memberRepository: Repository<Member>,
+    private readonly transactionService: TransactionService,
+    private readonly paymentService: PaymentService,
   ) {}
 
   async save(createMemberDto: CreateMemberDto) {
@@ -26,23 +30,34 @@ export class MemberService {
     member.nickname = createMemberDto.nickname;
     member.role = Role.USER;
 
-    try {
-      return (await this.memberRepository.save(member)).id;
-    } catch (err) {
-      if (err instanceof QueryFailedError) {
-        const message = err.message;
+    const saveMember = async (em: EntityManager) => {
+      try {
+        return await em.save(member);
+      } catch (err) {
+        if (err instanceof QueryFailedError) {
+          const message = err.message;
 
-        if (message.includes('UNIQUE') && message.includes('account')) {
-          throw new DuplicateAccountException();
-        }
+          if (message.includes('UNIQUE') && message.includes('account')) {
+            throw new DuplicateAccountException();
+          }
 
-        if (message.includes('UNIQUE') && message.includes('nickname')) {
-          throw new DuplicateNicknameException();
+          if (message.includes('UNIQUE') && message.includes('nickname')) {
+            throw new DuplicateNicknameException();
+          }
         }
+        throw err;
       }
+    };
 
-      throw err;
-    }
+    const cb = async (em: EntityManager) => {
+      const savedMember = await saveMember(em);
+
+      await this.paymentService.createTravelPay(em, savedMember);
+
+      return savedMember.id;
+    };
+
+    return this.transactionService.transaction(cb);
   }
 
   findByAccount(account: string) {
