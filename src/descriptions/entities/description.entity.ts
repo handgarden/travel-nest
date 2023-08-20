@@ -15,11 +15,11 @@ export class Description extends DefaultEntity {
   id: number;
 
   @ManyToOne(() => Member)
-  @JoinColumn({ name: 'creator_id' })
+  @JoinColumn()
   creator: Promise<Member>;
 
   @ManyToOne(() => Destination)
-  @JoinColumn({ name: 'destination_id' })
+  @JoinColumn()
   destination: Promise<Destination>;
 
   @Column({ type: 'text' })

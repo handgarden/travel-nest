@@ -12,6 +12,9 @@ import { ResourceNotFoundException } from 'src/exception/resource-not-found.exce
 import { TravelPayResponse } from './dto/travel-pay-response.dto';
 import { CreditCardResponse } from './dto/credit-card-response.dto';
 import { PaymentMethodResponse } from './dto/payment-method-response.dto';
+import { PaymentType } from './entities/payment-type.enum';
+import { ProcessPaymentRequest } from './dto/process-payment-request.dto';
+import { BalanceInsufficientException } from './exception/balance-insufficient.exception';
 
 @Injectable()
 export class PaymentService {
@@ -23,16 +26,13 @@ export class PaymentService {
   ) {}
 
   async findAll(memberId: number) {
-    console.log(memberId);
     const creditCards = await this.creditCardRepository.find({
       where: { member: { id: memberId } },
     });
-    console.log(creditCards);
 
     const travelPays = await this.travelPayRepository.find({
       where: { member: { id: memberId } },
     });
-    console.log(travelPays);
     if (travelPays.length < 1) {
       throw new ResourceNotFoundException();
     }
@@ -111,6 +111,41 @@ export class PaymentService {
     return DefaultResponseMessage.SUCCESS;
   }
 
+  async proccessPayment(
+    em: EntityManager,
+    dto: ProcessPaymentRequest,
+  ): Promise<void> {
+    if (dto.paymentType === PaymentType.TRAVEL_PAY) {
+      const result = await em
+        .getRepository(TravelPay)
+        .createQueryBuilder('pay')
+        .update()
+        .set({ balance: () => 'balance - :price' })
+        .setParameter('price', dto.price)
+        .where('balance >= :price', { price: dto.price })
+        .andWhere('id = :id', { id: dto.paymentId })
+        .andWhere('memberId = :memberId', { memberId: dto.memberId })
+        .execute();
+      if (result.affected !== 1) {
+        throw new BalanceInsufficientException();
+      }
+    } else {
+      const result = await em
+        .getRepository(CreditCard)
+        .createQueryBuilder('card')
+        .update()
+        .set({ mockBalance: () => 'mockBalance - :price' })
+        .setParameter('price', dto.price)
+        .where('mockBalance >= :price', { price: dto.price })
+        .andWhere('id = :id', { id: dto.paymentId })
+        .andWhere('memberId = :memberId', { memberId: dto.memberId })
+        .execute();
+      if (result.affected !== 1) {
+        throw new BalanceInsufficientException();
+      }
+    }
+  }
+
   /**
    * 회원 생성시에 사용
    * @param em 트랜잭션 묶으려면 em 사용해야함
@@ -121,7 +156,6 @@ export class PaymentService {
     const travelPay = new TravelPay();
     travelPay.member = Promise.resolve(member);
     travelPay.balance = 0;
-    console.log(member, travelPay);
     const saved = await em.save(travelPay);
     return saved;
   }

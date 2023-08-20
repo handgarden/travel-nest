@@ -1,16 +1,15 @@
-import { Pageable } from 'src/common/pageable.dto';
 import { JwtMemberDto } from './../auth/dto/jwt-member.dto';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
-import { UpdateRoomDto } from './dto/update-room.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Destination } from 'src/destinations/entities/destination.entity';
-import { Between, Repository } from 'typeorm';
+import { Between, EntityManager, In, Repository } from 'typeorm';
 import { Room } from './entities/room.entity';
 import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
 import { Category } from 'src/destinations/category.enum';
@@ -22,9 +21,16 @@ import { DuplicateRoomException } from './exception/duplicate-room.exception';
 import { RoomReservation } from './entities/roomReservation.entity';
 import { RoomReserveResponse } from './dto/room-reserve-response.dto';
 import { RoomResponse } from './dto/room-response.dto';
+import { ReserveRoomDto } from './dto/reserve-room.dto';
+import * as moment from 'moment';
+import { OutOfStockException } from './exception/out-of-stock.exception';
+import { PaymentService } from 'src/payment/payment.service';
+import { ProcessPaymentRequest } from 'src/payment/dto/process-payment-request.dto';
+import { TransactionService } from 'src/transaction/transaction.service';
 
 @Injectable()
 export class RoomService {
+  private readonly logger = new Logger('RoomService');
   constructor(
     @InjectRepository(Destination)
     private readonly destinationRepository: Repository<Destination>,
@@ -32,6 +38,8 @@ export class RoomService {
     private readonly roomRepository: Repository<Room>,
     @InjectRepository(RoomReservation)
     private readonly reservationRepository: Repository<RoomReservation>,
+    private readonly paymentService: PaymentService,
+    private readonly transactionService: TransactionService,
   ) {}
 
   async create(member: JwtMemberDto, createRoomDto: CreateRoomDto) {
@@ -141,17 +149,100 @@ export class RoomService {
     return RoomResponse.create(destination, room);
   }
 
-  // async reservceRoom()
+  async reserveRoom(reserveDto: ReserveRoomDto) {
+    const startM = moment(reserveDto.startDate);
+    const endM = moment(reserveDto.endDate);
+    const diff = endM.diff(startM, 'days');
 
-  update(id: number, updateRoomDto: UpdateRoomDto) {
-    return `This action updates a #${id} room`;
+    const room = await this.roomRepository.findOneBy({ id: reserveDto.roomId });
+    const totalPrice = room.price * diff;
+
+    const reserveTx = async (em: EntityManager) => {
+      const result = await em
+        .getRepository(RoomReservation)
+        .createQueryBuilder('reserve')
+        .update()
+        .set({ stock: () => 'stock - 1' })
+        .where('roomId = :roomId', { roomId: reserveDto.roomId })
+        .andWhere('reserveDate BETWEEN :start AND :end', {
+          start: startM.toDate(),
+          end: endM.add(-1, 'days').toDate(),
+        })
+        .andWhere('stock > 0')
+        .execute();
+      if (result.affected !== diff) {
+        throw new OutOfStockException();
+      }
+    };
+
+    const request = new ProcessPaymentRequest();
+    request.memberId = reserveDto.requestMemberId;
+    request.paymentType = reserveDto.paymentMethod.paymentType;
+    request.paymentId = reserveDto.paymentMethod.paymentMethodId;
+    request.price = totalPrice;
+    const cb = async (em: EntityManager) => {
+      await this.paymentService.proccessPayment(em, request);
+      await reserveTx(em);
+    };
+
+    await this.transactionService.transaction(cb);
+    return DefaultResponseMessage.SUCCESS;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} room`;
+  async createRoomReservation(
+    roomId: number,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<void> {
+    const startM = moment(startDate);
+    const endM = moment(endDate);
+
+    const diff = endM.diff(startM, 'days');
+
+    const dateMap = new Map<string, Date>();
+
+    for (let i = 0; i < diff; i++) {
+      const date = startM.add(i, 'days').toDate();
+      dateMap.set(date.toString(), date);
+    }
+
+    const room = await this.roomRepository.findOneBy({ id: roomId });
+
+    if (!room) {
+      throw new ResourceNotFoundException();
+    }
+
+    const exist = await this.reservationRepository.find({
+      where: {
+        room: { id: roomId },
+        reserveDate: Between(startDate, endM.add(-1, 'days').toDate()),
+      },
+    });
+
+    exist.forEach((e) => dateMap.delete(e.reserveDate.toString()));
+
+    const dateArr = [];
+    dateMap.forEach((d) => dateArr.push(d));
+
+    await Promise.all(
+      dateArr.map(async (d) => {
+        try {
+          const reserve = new RoomReservation();
+          reserve.room = Promise.resolve(room);
+          reserve.roomId = room.id;
+          reserve.stock = room.stock;
+          reserve.reserveDate = d;
+          await this.reservationRepository.save(reserve);
+        } catch (err) {
+          this.logger.log('create reserve crash', err);
+        }
+      }),
+    );
   }
 
-  checkAuth(creator: Member, memberId: number) {
+  //=======================================================
+
+  private checkAuth(creator: Member, memberId: number) {
     if (creator.id !== memberId) {
       throw new ForbiddenException();
     }
@@ -161,16 +252,11 @@ export class RoomService {
   }
 
   private convertTime(str: string) {
-    const arr = str.split(':');
-    const h = parseInt(arr[0]);
-    const m = parseInt(arr[1]);
-    if (isNaN(h) || isNaN(m)) {
+    const m = moment(str, 'HH:mm');
+    if (!m.isValid()) {
       throw new BadRequestException('can not parse time');
     }
 
-    const date = new Date();
-    date.setHours(h, m);
-
-    return date;
+    return m.toDate();
   }
 }

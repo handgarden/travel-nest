@@ -5,7 +5,8 @@ import {
   ValidatorConstraintInterface,
   registerDecorator,
 } from 'class-validator';
-import { parseDateFunc } from '../function/parse-date.function';
+import * as moment from 'moment';
+import { DateFormat } from '../date-format';
 
 @ValidatorConstraint({ name: 'customDate', async: false })
 export class CustomDate implements ValidatorConstraintInterface {
@@ -13,11 +14,7 @@ export class CustomDate implements ValidatorConstraintInterface {
     value: any,
     validationArguments?: ValidationArguments,
   ): boolean | Promise<boolean> {
-    try {
-      return parseDateFunc(value) !== null;
-    } catch (e) {
-      return false;
-    }
+    return moment(value, DateFormat.DEFAULT).isValid();
   }
   defaultMessage?(validationArguments?: ValidationArguments): string {
     return `${validationArguments.targetName} date format error`;
@@ -30,7 +27,7 @@ export function IsCustomDate(
 ) {
   return function (object: unknown, propertyName: string) {
     registerDecorator({
-      name: 'isLongerThan',
+      name: 'isCustomDate',
       target: object.constructor,
       propertyName: propertyName,
       constraints: [property],

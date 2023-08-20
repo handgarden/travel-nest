@@ -6,24 +6,29 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 
 @Entity()
+@Unique('reserve_unique', ['roomId', 'reserveDate'])
 export class RoomReservation extends DefaultEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @ManyToOne(() => Room)
-  @JoinColumn()
+  @JoinColumn({ name: 'roomId' })
   room: Promise<Room>;
+
+  @Column({ nullable: false })
+  roomId: number;
 
   @Column()
   reserveDate: Date;
 
   @Column()
-  count: number;
+  stock: number;
 
   isOutOfStock() {
-    return this.count < 1;
+    return this.stock < 1;
   }
 }

@@ -1,5 +1,11 @@
 import { Member } from 'src/member/entities/member.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
 export class CreditCard {
@@ -7,7 +13,11 @@ export class CreditCard {
   id: number;
 
   @ManyToOne(() => Member)
+  @JoinColumn({ name: 'memberId' })
   member: Promise<Member>;
+
+  @Column({ nullable: false })
+  memberId: number;
 
   @Column()
   name: string;
