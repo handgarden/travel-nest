@@ -15,6 +15,7 @@ import { PaymentMethodResponse } from './dto/payment-method-response.dto';
 import { PaymentType } from './entities/payment-type.enum';
 import { ProcessPaymentRequest } from './dto/process-payment-request.dto';
 import { BalanceInsufficientException } from './exception/balance-insufficient.exception';
+import { PaymentCancellationFailedException } from './exception/payment-cancellation-failed.exception';
 
 @Injectable()
 export class PaymentService {
@@ -142,6 +143,39 @@ export class PaymentService {
         .execute();
       if (result.affected !== 1) {
         throw new BalanceInsufficientException();
+      }
+    }
+  }
+
+  async cancelPayment(
+    em: EntityManager,
+    dto: ProcessPaymentRequest,
+  ): Promise<void> {
+    if (dto.paymentType === PaymentType.TRAVEL_PAY) {
+      const result = await em
+        .getRepository(TravelPay)
+        .createQueryBuilder('pay')
+        .update()
+        .set({ balance: () => 'balance + :price' })
+        .setParameter('price', dto.price)
+        .where('id = :id', { id: dto.paymentId })
+        .andWhere('memberId = :memberId', { memberId: dto.memberId })
+        .execute();
+      if (result.affected !== 1) {
+        throw new PaymentCancellationFailedException();
+      }
+    } else {
+      const result = await em
+        .getRepository(CreditCard)
+        .createQueryBuilder('card')
+        .update()
+        .set({ mockBalance: () => 'mockBalance + :price' })
+        .setParameter('price', dto.price)
+        .where('id = :id', { id: dto.paymentId })
+        .andWhere('memberId = :memberId', { memberId: dto.memberId })
+        .execute();
+      if (result.affected !== 1) {
+        throw new PaymentCancellationFailedException();
       }
     }
   }

@@ -9,7 +9,7 @@ import {
 import { CreateRoomDto } from './dto/create-room.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Destination } from 'src/destinations/entities/destination.entity';
-import { Between, EntityManager, In, Repository } from 'typeorm';
+import { Between, EntityManager, Repository } from 'typeorm';
 import { Room } from './entities/room.entity';
 import { ResourceNotFoundException } from 'src/exception/resource-not-found.exception';
 import { Category } from 'src/destinations/category.enum';
@@ -35,6 +35,9 @@ import { RoomOrderResponse } from './dto/room-order-response.dto';
 import { RoomOrder } from './entities/room-order.entity';
 import { Pageable } from 'src/common/pageable.dto';
 import { PageResponse } from 'src/common/page-response.dto';
+import { CompleteOrderException } from './exception/complete-order.exception';
+import { CancellationTimeoutException } from './exception/cancellation-timeout.exception';
+import { OrderCancellationException } from './exception/order-cancellation.exception';
 
 @Injectable()
 export class RoomService {
@@ -52,7 +55,7 @@ export class RoomService {
     private readonly orderRepository: Repository<RoomOrder>,
   ) {}
 
-  async create(member: JwtMemberDto, createRoomDto: CreateRoomDto) {
+  async saveRoom(member: JwtMemberDto, createRoomDto: CreateRoomDto) {
     const destinations = await this.destinationRepository.find({
       where: { id: createRoomDto.destinationId },
       relations: { creator: true },
@@ -97,7 +100,11 @@ export class RoomService {
     return DefaultResponseMessage.SUCCESS;
   }
 
-  async findAll(destiantionId: number, startDate: Date, endDate: Date) {
+  async getRoomsForReserve(
+    destiantionId: number,
+    startDate: Date,
+    endDate: Date,
+  ) {
     const rooms = await this.roomRepository.find({
       where: {
         destination: {
@@ -138,7 +145,7 @@ export class RoomService {
     return response;
   }
 
-  async findOne(id: number) {
+  async getRoom(id: number) {
     const rooms = await this.roomRepository.find({
       where: {
         id,
@@ -159,6 +166,31 @@ export class RoomService {
     return RoomResponse.create(destination, room);
   }
 
+  async getRoomsByProducer(producerId: number, pageable: Pageable) {
+    const [rooms, total] = await this.roomRepository.findAndCount({
+      where: {
+        destination: {
+          creator: {
+            id: producerId,
+          },
+        },
+      },
+      relations: { destination: true },
+      order: { id: 'DESC' },
+      take: pageable.getTake(),
+      skip: pageable.getSkip(),
+    });
+
+    const responses = await Promise.all(
+      rooms.map(async (r) => {
+        const destination = await r.destination;
+        return RoomResponse.create(destination, r);
+      }),
+    );
+
+    return new PageResponse(responses, total);
+  }
+
   async reserveRoom(reserveDto: ReserveRoomDto) {
     const startM = moment(reserveDto.startDate);
     const endM = moment(reserveDto.endDate);
@@ -166,7 +198,7 @@ export class RoomService {
 
     const room = await this.roomRepository.findOne({
       where: { id: reserveDto.roomId },
-      relations: { destination: true },
+      relations: { destination: { creator: true } },
     });
 
     const totalPrice = room.price * diff;
@@ -195,6 +227,7 @@ export class RoomService {
       member.id = reserveDto.requestMemberId;
       order.consumer = Promise.resolve(member);
       order.room = Promise.resolve(room);
+      order.producer = (await room.destination).creator;
       order.startDate = startM.toDate();
       order.endDate = endM.toDate();
       order.status = OrderStatus.CREATED;
@@ -210,7 +243,7 @@ export class RoomService {
       }
       order.totalPrice = totalPrice;
       const saved = await em.save(order);
-      const response = await RoomOrderResponse.create(
+      const response = await RoomOrderResponse.createAsync(
         saved,
         reserveDto.requestMemberNickname,
       );
@@ -247,11 +280,175 @@ export class RoomService {
 
     const res = await Promise.all(
       orders.map(async (o) => {
-        return await RoomOrderResponse.create(o, member.nickname);
+        return await RoomOrderResponse.createAsync(o, member.nickname);
       }),
     );
     return new PageResponse(res, total);
   }
+
+  async confirmOrder(memberId: number, orderId: number) {
+    const orders = await this.orderRepository.find({
+      where: { id: orderId },
+      relations: { consumer: true, producer: true },
+      take: 1,
+    });
+
+    if (orders.length < 1) {
+      throw new ResourceNotFoundException();
+    }
+
+    const order = orders[0];
+
+    await this.hasOrderOwnership(memberId, order);
+
+    if (order.status !== OrderStatus.CREATED) {
+      throw new CompleteOrderException();
+    }
+
+    await this.orderRepository.update(
+      { id: orderId },
+      { status: OrderStatus.CONFIRMED },
+    );
+
+    return DefaultResponseMessage.SUCCESS;
+  }
+
+  async cancleOrder(memberId: number, orderId: number) {
+    const orders = await this.orderRepository.find({
+      where: { id: orderId },
+      relations: {
+        consumer: true,
+        producer: true,
+        room: true,
+        creditCard: true,
+        travelPay: true,
+      },
+      take: 1,
+    });
+
+    if (orders.length < 1) {
+      throw new ResourceNotFoundException();
+    }
+
+    const order = orders[0];
+
+    await this.hasOrderOwnership(memberId, order);
+
+    if (order.status !== OrderStatus.CREATED) {
+      throw new CompleteOrderException();
+    }
+
+    const room = await order.room;
+
+    const orderLimitTime = moment(order.createdAt).add(10, 'minutes');
+    const now = moment();
+    if (now.isAfter(orderLimitTime)) {
+      const inTimeDate = moment(room.inTime);
+      const baseDate = moment(order.startDate);
+      baseDate.set('hour', inTimeDate.hours());
+      baseDate.set('minute', inTimeDate.minutes());
+      const limitDate = baseDate.add(-30, 'minutes');
+      if (now.isAfter(limitDate)) {
+        throw new CancellationTimeoutException();
+      }
+    }
+
+    const consumer = await order.consumer;
+    const request = new ProcessPaymentRequest();
+    request.memberId = consumer.id;
+    request.paymentType = order.paymentType;
+    if (order.paymentType === PaymentType.CREDIT_CARD) {
+      request.paymentId = (await order.creditCard).id;
+      request.price = order.totalPrice;
+    } else {
+      request.paymentId = (await order.travelPay).id;
+      request.price = order.totalPrice;
+    }
+
+    const restoreStockTx = async (em: EntityManager) => {
+      const startM = moment(order.startDate);
+      const endM = moment(order.endDate);
+      const diff = endM.diff(startM, 'days');
+
+      const result = await em
+        .getRepository(RoomReservation)
+        .createQueryBuilder('reserve')
+        .update()
+        .set({ stock: () => 'stock + 1' })
+        .where('roomId = :roomId', { roomId: room.id })
+        .andWhere('reserveDate BETWEEN :start AND :end', {
+          start: startM.toDate(),
+          end: endM.add(-1, 'days').toDate(),
+        })
+        .execute();
+      if (result.affected !== diff) {
+        throw new OrderCancellationException();
+      }
+    };
+
+    const cb = async (em: EntityManager) => {
+      await em
+        .getRepository(RoomOrder)
+        .update({ id: orderId }, { status: OrderStatus.CANCELLED });
+      await this.paymentService.cancelPayment(em, request);
+      await restoreStockTx(em);
+    };
+
+    await this.transactionService.transaction(cb);
+
+    return DefaultResponseMessage.SUCCESS;
+  }
+
+  async getRoomOrdersByProducer(
+    member: JwtMemberDto,
+    roomId: number,
+    pageable: Pageable,
+  ) {
+    const rooms = await this.roomRepository.find({
+      where: { id: roomId, destination: { creator: { id: member.id } } },
+      relations: {
+        destination: true,
+      },
+      take: 1,
+    });
+
+    //숙소의 주인이 아님
+    if (rooms.length < 1) {
+      throw new ForbiddenException();
+    }
+    const room = rooms[0];
+    const destination = await room.destination;
+
+    const [orders, total] = await this.orderRepository.findAndCount({
+      where: {
+        room: {
+          id: roomId,
+        },
+      },
+      relations: {
+        consumer: true,
+      },
+      order: { id: 'DESC' },
+      take: pageable.getTake(),
+      skip: pageable.getSkip(),
+    });
+
+    const res = await Promise.all(
+      orders.map(async (o) => {
+        const consumer = await o.consumer;
+        return RoomOrderResponse.create(
+          o,
+          room,
+          destination,
+          consumer.nickname,
+        );
+      }),
+    );
+
+    return new PageResponse(res, total);
+  }
+
+  //=======================================================
 
   async createRoomReservation(
     roomId: number,
@@ -304,8 +501,6 @@ export class RoomService {
     );
   }
 
-  //=======================================================
-
   private checkAuth(creator: Member, memberId: number) {
     if (creator.id !== memberId) {
       throw new ForbiddenException();
@@ -322,5 +517,14 @@ export class RoomService {
     }
 
     return m.toDate();
+  }
+
+  private async hasOrderOwnership(memberId: number, order: RoomOrder) {
+    const consumer = await order.consumer;
+    const producer = await order.producer;
+
+    if (consumer.id !== memberId && producer.id !== memberId) {
+      throw new ForbiddenException();
+    }
   }
 }

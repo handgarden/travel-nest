@@ -12,6 +12,9 @@ export class RoomOrder extends OrderTypeEntity {
   @ManyToOne(() => Member)
   consumer: Promise<Member>;
 
+  @ManyToOne(() => Member)
+  producer: Promise<Member>;
+
   @ManyToOne(() => Room)
   room: Promise<Room>;
 

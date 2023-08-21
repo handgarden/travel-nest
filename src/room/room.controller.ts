@@ -31,22 +31,45 @@ export class RoomController {
     @JwtMember() member: JwtMemberDto,
     @Body() createRoomDto: CreateRoomDto,
   ) {
-    return this.roomService.create(member, createRoomDto);
+    return this.roomService.saveRoom(member, createRoomDto);
   }
 
   @Get('/destination/:id')
-  findAll(
+  getRoomsForReserve(
     @Param('id', ParseIntPipe) destinationId,
     @Query('start', ValidateDatePipe) startDate: string,
     @Query('end', ValidateDatePipe) endDate: string,
   ) {
     const dates = this.validateReservationDate(startDate, endDate);
-    return this.roomService.findAll(destinationId, dates.start, dates.end);
+    return this.roomService.getRoomsForReserve(
+      destinationId,
+      dates.start,
+      dates.end,
+    );
+  }
+
+  @Get('producer')
+  @Authorization()
+  getRoomsByProducer(
+    @JwtMember() member: JwtMemberDto,
+    @PageRequest() pageable: Pageable,
+  ) {
+    return this.roomService.getRoomsByProducer(member.id, pageable);
+  }
+
+  @Get('producer/:id')
+  @Authorization()
+  getRoomOrdersByroducer(
+    @JwtMember() member: JwtMemberDto,
+    @Param('id', ParseIntPipe) roomId: number,
+    @PageRequest() pageable: Pageable,
+  ) {
+    return this.roomService.getRoomOrdersByProducer(member, roomId, pageable);
   }
 
   @Get('item/:id')
   findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.roomService.findOne(id);
+    return this.roomService.getRoom(id);
   }
 
   @Post('item/:id')
@@ -80,6 +103,21 @@ export class RoomController {
     @PageRequest() pageable: Pageable,
   ) {
     return this.roomService.getOrders(member, pageable);
+  }
+
+  @Post('orders/:id/confirm')
+  @Authorization()
+  confirmOrder(
+    @JwtMember() member: JwtMemberDto,
+    @Param('id', ParseIntPipe) orderId: number,
+  ) {
+    return this.roomService.confirmOrder(member.id, orderId);
+  }
+
+  @Post('orders/:id/cancel')
+  @Authorization()
+  cancelOrder(@JwtMember() member: JwtMemberDto, @Param('id') orderId: number) {
+    return this.roomService.cancleOrder(member.id, orderId);
   }
 
   // @Patch(':id')
