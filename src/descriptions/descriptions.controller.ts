@@ -23,7 +23,7 @@ import { Pageable } from 'src/common/pageable.dto';
 export class DescriptionsController {
   constructor(private readonly descriptionsService: DescriptionsService) {}
 
-  @Post()
+  @Post('item')
   @Authorization()
   create(
     @JwtMember() member: JwtMemberDto,
@@ -34,7 +34,7 @@ export class DescriptionsController {
     return this.descriptionsService.create(member, createDescriptionDto);
   }
 
-  @Get()
+  @Get('item')
   findAll(
     @Query('destination', ParseIntPipe) destinationId: number,
     @PageRequest() pageable: Pageable,
@@ -42,7 +42,16 @@ export class DescriptionsController {
     return this.descriptionsService.findAll(destinationId, pageable);
   }
 
-  @Post(':id')
+  @Get('user')
+  @Authorization()
+  findAllByUser(
+    @JwtMember() member: JwtMemberDto,
+    @PageRequest() pageable: Pageable,
+  ) {
+    return this.descriptionsService.findAllByUser(member.id, pageable);
+  }
+
+  @Post('item/:id')
   @Authorization()
   update(
     @JwtMember() member: JwtMemberDto,
@@ -53,7 +62,7 @@ export class DescriptionsController {
     return this.descriptionsService.update(member.id, id, updateDescriptionDto);
   }
 
-  @Delete(':id')
+  @Delete('item/:id')
   @Authorization()
   remove(
     @JwtMember() member: JwtMemberDto,

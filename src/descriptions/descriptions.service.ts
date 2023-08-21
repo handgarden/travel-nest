@@ -100,6 +100,39 @@ export class DescriptionsService {
     return new PageResponse(responses, total);
   }
 
+  async findAllByUser(memberId: number, pageable: Pageable) {
+    const result = await this.descriptionRepository.findAndCount({
+      where: {
+        creator: {
+          id: memberId,
+        },
+      },
+      relations: {
+        creator: true,
+      },
+      order: {
+        id: 'DESC',
+      },
+      take: pageable.size,
+      skip: pageable.size * pageable.page,
+    });
+
+    const descriptions = result[0];
+    const total = result[1];
+
+    const ids = descriptions.map((d) => d.id);
+
+    const imageMap = await this.findImagesByDescriptions(ids);
+
+    const responses = await Promise.all(
+      descriptions.map(
+        async (d) => await this.convertToResponse(d, imageMap.get(d.id)),
+      ),
+    );
+
+    return new PageResponse(responses, total);
+  }
+
   async update(
     memberId: number,
     id: number,
