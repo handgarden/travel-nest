@@ -14,7 +14,7 @@ export class CustomDate implements ValidatorConstraintInterface {
     value: any,
     validationArguments?: ValidationArguments,
   ): boolean | Promise<boolean> {
-    return moment(value, DateFormat.DEFAULT).isValid();
+    return moment(value, DateFormat.DATE).isValid();
   }
   defaultMessage?(validationArguments?: ValidationArguments): string {
     return `${validationArguments.targetName} date format error`;

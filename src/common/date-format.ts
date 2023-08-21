@@ -1,3 +1,4 @@
 export enum DateFormat {
-  DEFAULT = 'YYYY-MM-DD',
+  DATE = 'YYYY-MM-DD',
+  TIME = 'HH:mm',
 }

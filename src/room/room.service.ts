@@ -18,7 +18,7 @@ import { Member } from 'src/member/entities/member.entity';
 import { Role } from 'src/member/enum/Role';
 import { DefaultResponseMessage } from 'src/common/basic-response.enum';
 import { DuplicateRoomException } from './exception/duplicate-room.exception';
-import { RoomReservation } from './entities/roomReservation.entity';
+import { RoomReservation } from './entities/room-reservation.entity';
 import { RoomReserveResponse } from './dto/room-reserve-response.dto';
 import { RoomResponse } from './dto/room-response.dto';
 import { ReserveRoomDto } from './dto/reserve-room.dto';
@@ -27,6 +27,14 @@ import { OutOfStockException } from './exception/out-of-stock.exception';
 import { PaymentService } from 'src/payment/payment.service';
 import { ProcessPaymentRequest } from 'src/payment/dto/process-payment-request.dto';
 import { TransactionService } from 'src/transaction/transaction.service';
+import { OrderStatus } from './entities/order-status.enum';
+import { PaymentType } from 'src/payment/entities/payment-type.enum';
+import { CreditCard } from 'src/payment/entities/credit-card.entity';
+import { TravelPay } from 'src/payment/entities/travel-pay.entity';
+import { RoomOrderResponse } from './dto/room-order-response.dto';
+import { RoomOrder } from './entities/room-order.entity';
+import { Pageable } from 'src/common/pageable.dto';
+import { PageResponse } from 'src/common/page-response.dto';
 
 @Injectable()
 export class RoomService {
@@ -40,6 +48,8 @@ export class RoomService {
     private readonly reservationRepository: Repository<RoomReservation>,
     private readonly paymentService: PaymentService,
     private readonly transactionService: TransactionService,
+    @InjectRepository(RoomOrder)
+    private readonly orderRepository: Repository<RoomOrder>,
   ) {}
 
   async create(member: JwtMemberDto, createRoomDto: CreateRoomDto) {
@@ -154,7 +164,11 @@ export class RoomService {
     const endM = moment(reserveDto.endDate);
     const diff = endM.diff(startM, 'days');
 
-    const room = await this.roomRepository.findOneBy({ id: reserveDto.roomId });
+    const room = await this.roomRepository.findOne({
+      where: { id: reserveDto.roomId },
+      relations: { destination: true },
+    });
+
     const totalPrice = room.price * diff;
 
     const reserveTx = async (em: EntityManager) => {
@@ -166,13 +180,41 @@ export class RoomService {
         .where('roomId = :roomId', { roomId: reserveDto.roomId })
         .andWhere('reserveDate BETWEEN :start AND :end', {
           start: startM.toDate(),
-          end: endM.add(-1, 'days').toDate(),
+          end: endM.clone().add(-1, 'days').toDate(),
         })
         .andWhere('stock > 0')
         .execute();
       if (result.affected !== diff) {
         throw new OutOfStockException();
       }
+    };
+
+    const saveOrder = async (em: EntityManager) => {
+      const order = new RoomOrder();
+      const member = new Member();
+      member.id = reserveDto.requestMemberId;
+      order.consumer = Promise.resolve(member);
+      order.room = Promise.resolve(room);
+      order.startDate = startM.toDate();
+      order.endDate = endM.toDate();
+      order.status = OrderStatus.CREATED;
+      order.paymentType = reserveDto.paymentMethod.paymentType;
+      if (order.paymentType === PaymentType.CREDIT_CARD) {
+        const card = new CreditCard();
+        card.id = reserveDto.paymentMethod.paymentMethodId;
+        order.creditCard = Promise.resolve(card);
+      } else {
+        const pay = new TravelPay();
+        pay.id = reserveDto.paymentMethod.paymentMethodId;
+        order.travelPay = Promise.resolve(pay);
+      }
+      order.totalPrice = totalPrice;
+      const saved = await em.save(order);
+      const response = await RoomOrderResponse.create(
+        saved,
+        reserveDto.requestMemberNickname,
+      );
+      return response;
     };
 
     const request = new ProcessPaymentRequest();
@@ -183,10 +225,32 @@ export class RoomService {
     const cb = async (em: EntityManager) => {
       await this.paymentService.proccessPayment(em, request);
       await reserveTx(em);
+      const res = await saveOrder(em);
+      return res;
     };
 
-    await this.transactionService.transaction(cb);
-    return DefaultResponseMessage.SUCCESS;
+    return await this.transactionService.transaction(cb);
+  }
+
+  async getOrders(member: JwtMemberDto, pageable: Pageable) {
+    const [orders, total] = await this.orderRepository.findAndCount({
+      where: { consumer: { id: member.id } },
+      relations: {
+        room: {
+          destination: true,
+        },
+      },
+      order: { id: 'DESC' },
+      take: pageable.getTake(),
+      skip: pageable.getSkip(),
+    });
+
+    const res = await Promise.all(
+      orders.map(async (o) => {
+        return await RoomOrderResponse.create(o, member.nickname);
+      }),
+    );
+    return new PageResponse(res, total);
   }
 
   async createRoomReservation(
@@ -202,7 +266,7 @@ export class RoomService {
     const dateMap = new Map<string, Date>();
 
     for (let i = 0; i < diff; i++) {
-      const date = startM.add(i, 'days').toDate();
+      const date = startM.clone().add(i, 'days').toDate();
       dateMap.set(date.toString(), date);
     }
 
@@ -215,7 +279,7 @@ export class RoomService {
     const exist = await this.reservationRepository.find({
       where: {
         room: { id: roomId },
-        reserveDate: Between(startDate, endM.add(-1, 'days').toDate()),
+        reserveDate: Between(startDate, endM.clone().add(-1, 'days').toDate()),
       },
     });
 

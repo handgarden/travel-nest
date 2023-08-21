@@ -18,12 +18,14 @@ import { ReserveRoomRequest } from './dto/reserve-room-request.dto';
 import { ReserveRoomDto } from './dto/reserve-room.dto';
 import * as moment from 'moment';
 import { DateFormat } from 'src/common/date-format';
+import { PageRequest } from 'src/common/decorator/pageRequest.decorator';
+import { Pageable } from 'src/common/pageable.dto';
 
 @Controller('rooms')
 export class RoomController {
   constructor(private readonly roomService: RoomService) {}
 
-  @Post()
+  @Post('item')
   @Authorization()
   create(
     @JwtMember() member: JwtMemberDto,
@@ -42,12 +44,12 @@ export class RoomController {
     return this.roomService.findAll(destinationId, dates.start, dates.end);
   }
 
-  @Get(':id')
+  @Get('item/:id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.roomService.findOne(id);
   }
 
-  @Post(':id')
+  @Post('item/:id')
   @Authorization()
   async reserve(
     @Param('id', ParseIntPipe) roomId: number,
@@ -67,7 +69,17 @@ export class RoomController {
     reserveDto.startDate = dates.start;
     reserveDto.endDate = dates.end;
     reserveDto.paymentMethod = dto.paymentMethod;
+    reserveDto.requestMemberNickname = member.nickname;
     return this.roomService.reserveRoom(reserveDto);
+  }
+
+  @Get('orders')
+  @Authorization()
+  getOrders(
+    @JwtMember() member: JwtMemberDto,
+    @PageRequest() pageable: Pageable,
+  ) {
+    return this.roomService.getOrders(member, pageable);
   }
 
   // @Patch(':id')
@@ -80,8 +92,8 @@ export class RoomController {
   //   return this.roomService.remove(+id);
   // }
   private validateReservationDate(startDate: string, endDate: string) {
-    const start = moment(startDate, DateFormat.DEFAULT);
-    const end = moment(endDate, DateFormat.DEFAULT);
+    const start = moment(startDate, DateFormat.DATE);
+    const end = moment(endDate, DateFormat.DATE);
     const now = moment().startOf('day');
     if (
       start.isBefore(now) ||

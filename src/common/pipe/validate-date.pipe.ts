@@ -5,7 +5,7 @@ import { DateFormat } from '../date-format';
 @Injectable()
 export class ValidateDatePipe implements PipeTransform<string> {
   transform(value: string): string {
-    const date = moment(value, DateFormat.DEFAULT);
+    const date = moment(value, DateFormat.DATE);
     const valid = date.isValid();
     if (!valid) {
       throw new BadRequestException('invlid date format');
