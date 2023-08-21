@@ -35,7 +35,7 @@ export class JourneysController {
     return this.journeysService.findContents(member, pageable);
   }
 
-  @Post()
+  @Post('item')
   @Authorization()
   create(
     @JwtMember() member: JwtMemberDto,
@@ -44,17 +44,26 @@ export class JourneysController {
     return this.journeysService.create(member, createJourneyDto);
   }
 
-  @Get()
+  @Get('item')
   findAll(@PageRequest() pageable: Pageable) {
     return this.journeysService.findAll(pageable);
   }
 
-  @Get(':id')
+  @Get('user')
+  @Authorization()
+  findAllByUser(
+    @JwtMember() member: JwtMemberDto,
+    @PageRequest() pageable: Pageable,
+  ) {
+    return this.journeysService.findAllByUser(member.id, pageable);
+  }
+
+  @Get('item/:id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.journeysService.findOne(+id);
   }
 
-  @Post(':id')
+  @Post('item/:id')
   @Authorization()
   update(
     @JwtMember() member: JwtMemberDto,
@@ -64,7 +73,7 @@ export class JourneysController {
     return this.journeysService.update(member.id, id, updateJourneyDto);
   }
 
-  @Delete(':id')
+  @Delete('item/:id')
   @Authorization()
   remove(
     @JwtMember() member: JwtMemberDto,
@@ -76,7 +85,7 @@ export class JourneysController {
   //===============================================
   //COMMNET
   //===============================================
-  @Get(':id/comments')
+  @Get('item/:id/comments')
   getComments(
     @Param('id', ParseIntPipe) id: number,
     @PageRequest() pageable: Pageable,
@@ -84,7 +93,7 @@ export class JourneysController {
     return this.journeysCommentService.findAll(id, pageable);
   }
 
-  @Post(':id/comments')
+  @Post('item/:id/comments')
   @Authorization()
   saveComment(
     @JwtMember() member: JwtMemberDto,
@@ -94,7 +103,7 @@ export class JourneysController {
     return this.journeysCommentService.create(member, id, createDto);
   }
 
-  @Post('/comments/:id')
+  @Post('/item/comments/:id')
   @Authorization()
   updateComment(
     @JwtMember() member: JwtMemberDto,
@@ -104,7 +113,7 @@ export class JourneysController {
     return this.journeysCommentService.update(member.id, commentId, updateDto);
   }
 
-  @Delete('/comments/:id')
+  @Delete('/item/comments/:id')
   @Authorization()
   deleteComment(
     @JwtMember() member: JwtMemberDto,

@@ -93,6 +93,66 @@ export class JourneysService {
     return DefaultResponseMessage.SUCCESS;
   }
 
+  async findAllByUser(memberId: number, pageable: Pageable) {
+    //Journey 조회
+    const [journeys, total] = await this.journeyRepository.findAndCount({
+      where: {
+        creator: {
+          id: memberId,
+        },
+      },
+      relations: { creator: true },
+      order: {
+        id: 'DESC',
+      },
+      take: pageable.getTake(),
+      skip: pageable.getSkip(),
+    });
+
+    //Journey 컨텐츠 조회를 위해서 id 배열 생성
+    const ids = journeys.map((j) => j.id);
+    //컨텐츠 조회
+    const contents = await this.contentRepository.find({
+      where: { journey: { id: In(ids) } },
+      relations: {
+        description: {
+          destination: {
+            creator: true,
+          },
+          creator: true,
+        },
+      },
+      order: { journey: { id: 'DESC' }, id: 'ASC' },
+    });
+
+    //resonsedto로 변경
+    const contentResponses = await this.createJourneyContentResponse(contents);
+
+    //journeyResponse에 컨텐츠 넣어주기 위해서 journeyId - content[] Map 생성
+    const journeyIdContentMap = new Map<number, JourneyContentResponse[]>();
+    ids.forEach((i) => journeyIdContentMap.set(i, []));
+    contentResponses.forEach((r) => {
+      journeyIdContentMap.get(r.journeyId).push(r);
+    });
+
+    //journeyResponse 생성
+    const responses = await Promise.all(
+      journeys.map(async (j) => {
+        const res = new JourneyResponse();
+        res.id = j.id;
+        res.title = j.title;
+        res.review = j.review;
+        res.creatorNickname = (await j.creator).nickname;
+        res.createdAt = j.createdAt;
+        res.updatedAt = j.updatedAt;
+        res.journeyContents = journeyIdContentMap.get(j.id);
+        return res;
+      }),
+    );
+
+    return new PageResponse(responses, total);
+  }
+
   async findAll(pageable: Pageable) {
     //Journey 조회
     const [journeys, total] = await this.journeyRepository.findAndCount({
