@@ -103,6 +103,15 @@ export class JourneysController {
     return this.journeysCommentService.create(member, id, createDto);
   }
 
+  @Get('user/comments')
+  @Authorization()
+  getCommentsByUser(
+    @JwtMember() member: JwtMemberDto,
+    @PageRequest() pageable: Pageable,
+  ) {
+    return this.journeysCommentService.findAllByUser(member.id, pageable);
+  }
+
   @Post('/item/comments/:id')
   @Authorization()
   updateComment(

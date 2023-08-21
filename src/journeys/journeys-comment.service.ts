@@ -58,6 +58,27 @@ export class JourneysCommentService {
     return new PageResponse(responses, total);
   }
 
+  async findAllByUser(memberId: number, pageable: Pageable) {
+    const [comments, total] = await this.commentRepository.findAndCount({
+      where: { creator: { id: memberId } },
+      relations: {
+        creator: true,
+      },
+      order: { id: 'DESC' },
+      take: pageable.getTake(),
+      skip: pageable.getSkip(),
+    });
+
+    const responses = await Promise.all(
+      comments.map(async (c) => {
+        const nickname = (await c.creator).nickname;
+        return JourneyCommentResponse.create(nickname, c);
+      }),
+    );
+
+    return new PageResponse(responses, total);
+  }
+
   async update(memberId: number, id: number, dto: UpdateCommentRequest) {
     const comments = await this.commentRepository.find({
       where: { id },
