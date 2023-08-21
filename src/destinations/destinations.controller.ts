@@ -23,7 +23,7 @@ import { Pageable } from 'src/common/pageable.dto';
 export class DestinationsController {
   constructor(private readonly destinationsService: DestinationsService) {}
 
-  @Post()
+  @Post('/item')
   @Authorization()
   create(
     @JwtMember() member: JwtMemberDto,
@@ -32,17 +32,26 @@ export class DestinationsController {
     return this.destinationsService.create(member.id, createDestinationDto);
   }
 
-  @Get()
+  @Get('/item')
   findAll(@DestinationQueryParams() query: DestinationQuery) {
     return this.destinationsService.findAll(query);
   }
 
-  @Get(':id')
+  @Get('/user')
+  @Authorization()
+  findAllByMember(
+    @JwtMember() member: JwtMemberDto,
+    @DestinationQueryParams() query: DestinationQuery,
+  ) {
+    return this.destinationsService.findAllByMember(member.id, query);
+  }
+
+  @Get('/item/:id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.destinationsService.findOne(id);
   }
 
-  @Get(':id/thumbnails')
+  @Get('item/:id/thumbnails')
   getThumbnails(
     @Param('id', ParseIntPipe) id: number,
     @PageRequest() pagable: Pageable,
@@ -50,7 +59,7 @@ export class DestinationsController {
     return this.destinationsService.findThumbnails(id, pagable);
   }
 
-  @Patch(':id')
+  @Patch('item/:id')
   @Authorization()
   update(
     @JwtMember() member: JwtMemberDto,
@@ -60,7 +69,7 @@ export class DestinationsController {
     return this.destinationsService.update(member, id, updateDestinationDto);
   }
 
-  @Delete(':id')
+  @Delete('item/:id')
   @Authorization()
   remove(
     @JwtMember() member: JwtMemberDto,

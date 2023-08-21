@@ -114,6 +114,45 @@ export class DestinationsService {
     return new PageResponse(result, total);
   }
 
+  async findAllByMember(memberId: number, destinationQuery: DestinationQuery) {
+    let qb = this.repository.createQueryBuilder('destination');
+
+    qb.where('creator.id = :id', { id: memberId });
+
+    if (destinationQuery.category.length > 0) {
+      qb = qb.andWhere('category IN (:...category)', {
+        category: destinationQuery.category,
+      });
+    }
+
+    if (destinationQuery.query) {
+      const query = this.createStringQuery(destinationQuery.query);
+
+      qb = qb.andWhere(query);
+    }
+
+    const pageable = destinationQuery.pageable;
+
+    const finalQuery = qb
+      .select('destination.id', 'id')
+      .addSelect('destination.title', 'title')
+      .addSelect('destination.address', 'address')
+      .addSelect('destination.category', 'category')
+      .addSelect('destination.createdAt', 'createdAt')
+      .addSelect('destination.updatedAt', 'updatedAt')
+      .addSelect('creator.nickname', 'creatorNickname')
+      .innerJoin('destination.creator', 'creator')
+      .take(pageable.getTake())
+      .skip(pageable.getSkip())
+      .orderBy('id', 'DESC');
+
+    const result: DestinationResponse[] = await finalQuery.getRawMany();
+
+    const total = await finalQuery.getCount();
+
+    return new PageResponse(result, total);
+  }
+
   async findOne(id: number) {
     const destination = await this.repository.find({
       where: { id },
