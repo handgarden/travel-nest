@@ -249,6 +249,9 @@ export class DescriptionsService {
   async findImagesByDescriptions(
     ids: number[],
   ): Promise<Map<number, string[]>> {
+    if (ids.length < 1) {
+      return new Map<number, string[]>();
+    }
     const images: { storeFileName: string; descriptionId: number }[] =
       await this.imageRepository
         .createQueryBuilder('image')

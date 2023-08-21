@@ -490,7 +490,7 @@ export class RoomService {
         try {
           const reserve = new RoomReservation();
           reserve.room = Promise.resolve(room);
-          reserve.roomId = room.id;
+          reserve.room_id = room.id;
           reserve.stock = room.stock;
           reserve.reserveDate = d;
           await this.reservationRepository.save(reserve);

@@ -125,7 +125,7 @@ export class PaymentService {
         .setParameter('price', dto.price)
         .where('balance >= :price', { price: dto.price })
         .andWhere('id = :id', { id: dto.paymentId })
-        .andWhere('memberId = :memberId', { memberId: dto.memberId })
+        .andWhere('member_id = :memberId', { memberId: dto.memberId })
         .execute();
       if (result.affected !== 1) {
         throw new BalanceInsufficientException();
@@ -139,7 +139,7 @@ export class PaymentService {
         .setParameter('price', dto.price)
         .where('mockBalance >= :price', { price: dto.price })
         .andWhere('id = :id', { id: dto.paymentId })
-        .andWhere('memberId = :memberId', { memberId: dto.memberId })
+        .andWhere('member_id = :memberId', { memberId: dto.memberId })
         .execute();
       if (result.affected !== 1) {
         throw new BalanceInsufficientException();
@@ -159,7 +159,7 @@ export class PaymentService {
         .set({ balance: () => 'balance + :price' })
         .setParameter('price', dto.price)
         .where('id = :id', { id: dto.paymentId })
-        .andWhere('memberId = :memberId', { memberId: dto.memberId })
+        .andWhere('member_id = :memberId', { memberId: dto.memberId })
         .execute();
       if (result.affected !== 1) {
         throw new PaymentCancellationFailedException();
@@ -172,7 +172,7 @@ export class PaymentService {
         .set({ mockBalance: () => 'mockBalance + :price' })
         .setParameter('price', dto.price)
         .where('id = :id', { id: dto.paymentId })
-        .andWhere('memberId = :memberId', { memberId: dto.memberId })
+        .andWhere('member_id = :memberId', { memberId: dto.memberId })
         .execute();
       if (result.affected !== 1) {
         throw new PaymentCancellationFailedException();

@@ -10,17 +10,17 @@ import {
 } from 'typeorm';
 
 @Entity()
-@Unique('reserve_unique', ['roomId', 'reserveDate'])
+@Unique('reserve_unique', ['room_id', 'reserveDate'])
 export class RoomReservation extends DefaultEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @ManyToOne(() => Room)
-  @JoinColumn({ name: 'roomId' })
+  @JoinColumn({ name: 'room_id' })
   room: Promise<Room>;
 
   @Column({ nullable: false })
-  roomId: number;
+  room_id: number;
 
   @Column()
   reserveDate: Date;

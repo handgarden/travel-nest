@@ -13,11 +13,11 @@ export class TravelPay {
   id: number;
 
   @OneToOne(() => Member)
-  @JoinColumn({ name: 'memberId' })
+  @JoinColumn({ name: 'member_id' })
   member: Promise<Member>;
 
   @Column({ nullable: false })
-  memberId: number;
+  member_id: number;
 
   @Column()
   balance: number;

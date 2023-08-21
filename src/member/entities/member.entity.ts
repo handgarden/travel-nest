@@ -7,7 +7,7 @@ export class Member extends DefaultEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', enum: Role, default: Role.USER })
+  @Column()
   role: Role;
 
   @Column({ unique: true })

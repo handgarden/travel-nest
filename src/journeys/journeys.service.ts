@@ -80,7 +80,7 @@ export class JourneysService {
         const content = new JourneyContent();
         content.journey = Promise.resolve(idJourney);
         content.description = Promise.resolve(description);
-        content.journeyId = idJourney.id;
+        content.journey_id = idJourney.id;
 
         return content;
       });
@@ -273,7 +273,7 @@ export class JourneysService {
     const prevContents: { id: number }[] = await this.contentRepository
       .createQueryBuilder('content')
       .select('description.id', 'id')
-      .where({ journeyId: id })
+      .where({ journey_id: id })
       .innerJoin('content.description', 'description')
       .orderBy('content.id')
       .getRawMany();
@@ -322,7 +322,7 @@ export class JourneysService {
             const content = new JourneyContent();
             content.journey = Promise.resolve(journey);
             content.description = Promise.resolve(description);
-            content.journeyId = journey.id;
+            content.journey_id = journey.id;
 
             return content;
           });
@@ -353,7 +353,7 @@ export class JourneysService {
     this.checkAuthorization(member, memberId);
 
     const cb = async (em: EntityManager) => {
-      await em.delete(JourneyContent, { journeyId: id });
+      await em.delete(JourneyContent, { journey_id: id });
 
       await em.delete(Journey, id);
     };
@@ -400,7 +400,7 @@ export class JourneysService {
         const content = new JourneyContentResponse();
         content.description = descriptionRes;
         content.destination = destinationRes;
-        content.journeyId = c.journeyId;
+        content.journeyId = c.journey_id;
 
         return content;
       }),

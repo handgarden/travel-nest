@@ -4,7 +4,7 @@ import { CustomHttpException } from 'src/exception/custom-http.exception';
 export class RestrictedDestinationModificationException extends CustomHttpException {
   constructor() {
     super(
-      'Cannot be edited or deleted for destinations with reviews',
+      '후기가 존재하는 여행지는 수정, 제거할 수 없습니다.',
       HttpStatus.BAD_REQUEST,
     );
   }

@@ -3,6 +3,6 @@ import { CustomHttpException } from 'src/exception/custom-http.exception';
 
 export class EmptyContentException extends CustomHttpException {
   constructor() {
-    super('emtpy content', HttpStatus.BAD_REQUEST);
+    super('내용이 없습니다.', HttpStatus.BAD_REQUEST);
   }
 }

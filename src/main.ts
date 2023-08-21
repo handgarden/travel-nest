@@ -18,7 +18,10 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
 
-  if (process.env.NODE_ENV === 'development') {
+  if (
+    process.env.NODE_ENV === 'development' ||
+    process.env.NODE_ENV === 'local'
+  ) {
     app.enableCors({
       origin: 'http://localhost:3000',
       methods: ['GET', 'POST', 'DELETE', 'PATCH'],

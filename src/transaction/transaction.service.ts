@@ -7,17 +7,17 @@ export class TransactionService {
 
   async transaction<T>(cb: (em: EntityManager) => Promise<T>) {
     const qr = this.dataSource.createQueryRunner();
-    qr.connect();
-    qr.startTransaction();
+    await qr.connect();
+    await qr.startTransaction();
     try {
       const result = await cb(qr.manager);
-      qr.commitTransaction();
+      await qr.commitTransaction();
       return result;
     } catch (err) {
-      qr.rollbackTransaction();
+      await qr.rollbackTransaction();
       throw err;
     } finally {
-      qr.release();
+      await qr.release();
     }
   }
 }

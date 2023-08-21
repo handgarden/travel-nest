@@ -2,6 +2,7 @@ import { JwtModuleOptions } from '@nestjs/jwt';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { resolve } from 'path';
 import { StorageType } from 'src/file/storage/storage-type.enum';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 export enum ConfigProperties {
   TypeOrmModuleOptions = 'TypeOrmModuleOptions',
@@ -46,6 +47,8 @@ export default () => {
     password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE_DATABASE,
     autoLoadEntities: true,
+    dropSchema: true,
+    namingStrategy: new SnakeNamingStrategy(),
     logging: parseBool(process.env.DATABASE_LOGGING),
     synchronize:
       process.env.DATABASE_SYNCHRONIZE &&
@@ -53,6 +56,8 @@ export default () => {
         ? true
         : false,
   };
+
+  console.log(TypeOrmModuleOptions);
 
   const JwtModuleOptions: JwtModuleOptions = {
     secret: process.env.JWT_SECRET || 'secret',

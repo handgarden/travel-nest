@@ -3,6 +3,6 @@ import { CustomHttpException } from 'src/exception/custom-http.exception';
 
 export class BalanceInsufficientException extends CustomHttpException {
   constructor() {
-    super('balance insufficient', HttpStatus.BAD_REQUEST);
+    super('잔액이 부족합니다.', HttpStatus.BAD_REQUEST);
   }
 }

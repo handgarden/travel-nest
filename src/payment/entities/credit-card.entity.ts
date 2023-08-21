@@ -13,11 +13,11 @@ export class CreditCard {
   id: number;
 
   @ManyToOne(() => Member)
-  @JoinColumn({ name: 'memberId' })
+  @JoinColumn({ name: 'member_id' })
   member: Promise<Member>;
 
   @Column({ nullable: false })
-  memberId: number;
+  member_id: number;
 
   @Column()
   name: string;

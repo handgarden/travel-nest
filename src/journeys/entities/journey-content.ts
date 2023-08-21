@@ -14,11 +14,11 @@ export class JourneyContent {
   id: number;
 
   @ManyToOne(() => Journey)
-  @JoinColumn({ name: 'journeyId' })
+  @JoinColumn({ name: 'journey_id' })
   journey: Promise<Journey>;
 
   @Column({ nullable: false })
-  journeyId: number;
+  journey_id: number;
 
   @ManyToOne(() => Description)
   @JoinColumn()
