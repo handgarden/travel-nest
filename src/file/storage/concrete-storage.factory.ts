@@ -70,7 +70,6 @@ export class ConcreteStorageFactory {
   }
 
   private authenticate = (req: Request) => {
-    console.log(req);
     const auth = req.headers.authorization;
     if (!auth) {
       return new UnauthorizedException();
