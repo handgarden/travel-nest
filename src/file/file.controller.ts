@@ -27,6 +27,7 @@ export class FileController {
     @UploadedFiles(MultiFileValidationPipe)
     files: Express.Multer.File[],
   ) {
+    console.log(files);
     return this.fileService.storeFiles(member.id, files);
   }
 

@@ -1,11 +1,14 @@
 import { ConfigService } from '@nestjs/config';
-import { ConfigProperties, StorageOptions } from 'src/config/configuration';
+import {
+  ConfigProperties,
+  S3StorageOptions,
+  StorageOptions,
+} from 'src/config/configuration';
 import * as multer from 'multer';
 import { AbstractFileNamingStrategy } from './filename/abstract-file-naming.strategy';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { LocalStorage } from './local-storage';
 import { S3Storage } from './s3-storage';
-import { S3Client } from '@aws-sdk/client-s3';
 import { AbstractStorage } from './abstract-storage';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
@@ -42,19 +45,32 @@ export class ConcreteStorageFactory {
       destination: function (req, file, cb) {
         cb(auth(req), path);
       },
-      filename: this.namingStrategy.createStoreFileName,
+      filename: this.namingStrategy.createStoreFileNameCallback,
     };
     return new LocalStorage(options, path);
   }
 
   private createS3Storage() {
-    return new S3Storage({
-      s3: new S3Client(),
-      bucket: 'mock',
-    });
+    const auth = this.authenticate;
+    const defaultOptions = this.configService.get<S3StorageOptions>(
+      ConfigProperties.S3StorageOptions,
+    );
+    const naming = this.namingStrategy.createStoreFileName;
+    const options: S3StorageOptions = {
+      ...defaultOptions,
+      acl: 'public-read',
+      key: function (req, file, cb) {
+        auth(req as any);
+        const name = naming(file);
+        file.filename = name;
+        cb(null, name);
+      },
+    };
+    return new S3Storage(options);
   }
 
   private authenticate = (req: Request) => {
+    console.log(req);
     const auth = req.headers.authorization;
     if (!auth) {
       return new UnauthorizedException();

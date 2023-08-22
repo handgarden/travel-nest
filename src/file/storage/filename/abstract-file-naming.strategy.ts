@@ -1,5 +1,6 @@
 import * as multer from 'multer';
 
 export abstract class AbstractFileNamingStrategy {
-  abstract createStoreFileName: multer.DiskStorageOptions['filename'];
+  abstract createStoreFileNameCallback: multer.DiskStorageOptions['filename'];
+  abstract createStoreFileName: (file: Express.Multer.File) => string;
 }

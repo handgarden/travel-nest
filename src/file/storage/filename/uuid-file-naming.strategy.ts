@@ -7,7 +7,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class UUIDFileNamingStrategy extends AbstractFileNamingStrategy {
-  createStoreFileName = (
+  createStoreFileNameCallback = (
     req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
     file: Express.Multer.File,
     callback: (error: Error, filename: string) => void,
@@ -15,6 +15,9 @@ export class UUIDFileNamingStrategy extends AbstractFileNamingStrategy {
     const storeFileName = this.create(file.originalname);
     callback(null, storeFileName);
   };
+
+  createStoreFileName = (file: Express.Multer.File) =>
+    this.create(file.originalname);
 
   private create(originalFileName: string) {
     const ext = this.extractExt(originalFileName);
